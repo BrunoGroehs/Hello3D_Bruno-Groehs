@@ -1,0 +1,12 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/Users/Bruno Groehs/Desktop/FACULDADE/Processamento Grafico/2026/Hello3D_Bruno-Groehs/build/cmake_install.cmake",
+		"C:/Users/Bruno Groehs/Desktop/FACULDADE/Processamento Grafico/2026/Hello3D_Bruno-Groehs/build/_deps/glfw-build/cmake_install.cmake",
+		"C:/Users/Bruno Groehs/Desktop/FACULDADE/Processamento Grafico/2026/Hello3D_Bruno-Groehs/build/_deps/glfw-build/src/cmake_install.cmake",
+		"C:/Users/Bruno Groehs/Desktop/FACULDADE/Processamento Grafico/2026/Hello3D_Bruno-Groehs/build/_deps/glfw-build/docs/cmake_install.cmake",
+		"C:/Users/Bruno Groehs/Desktop/FACULDADE/Processamento Grafico/2026/Hello3D_Bruno-Groehs/build/_deps/glm-build/cmake_install.cmake",
+		"C:/Users/Bruno Groehs/Desktop/FACULDADE/Processamento Grafico/2026/Hello3D_Bruno-Groehs/build/_deps/glm-build/glm/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
