@@ -1,3 +1,3 @@
 # Resultado
 
-(Adicionar screenshot da execucao do Hello3D aqui)
+![alt text](result.png)
