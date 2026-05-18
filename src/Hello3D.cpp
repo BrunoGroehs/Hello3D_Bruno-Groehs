@@ -37,6 +37,10 @@ const GLchar* fragmentShaderSource = "#version 330\n"
 
 bool rotateX = false, rotateY = false, rotateZ = false;
 
+// Variáveis para translação e escala
+float transX = 0.0f, transY = 0.0f, transZ = 0.0f;
+float scaleObj = 1.0f;
+
 int main()
 {
 	glfwInit();
@@ -72,6 +76,13 @@ int main()
 
 	glEnable(GL_DEPTH_TEST);
 
+	// Posições dos cubos instanciados
+	glm::vec3 cubePositions[] = {
+		glm::vec3(0.0f,  0.0f,  0.0f),
+		glm::vec3(0.5f,  0.5f, -0.5f),
+		glm::vec3(-0.5f, -0.4f,  0.2f)
+	};
+
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwPollEvents();
@@ -84,19 +95,43 @@ int main()
 
 		float angle = (GLfloat)glfwGetTime();
 
-		model = glm::mat4(1);
-		if (rotateX)
-			model = glm::rotate(model, angle, glm::vec3(1.0f, 0.0f, 0.0f));
-		else if (rotateY)
-			model = glm::rotate(model, angle, glm::vec3(0.0f, 1.0f, 0.0f));
-		else if (rotateZ)
-			model = glm::rotate(model, angle, glm::vec3(0.0f, 0.0f, 1.0f));
-
-		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 18);
-		glDrawArrays(GL_POINTS, 0, 18);
+
+		// Loop para desenhar múltiplos cubos
+		for (int i = 0; i < 3; i++)
+		{
+			glm::mat4 model = glm::mat4(1);
+			
+			// 1. Translação de Input do usuário
+			model = glm::translate(model, glm::vec3(transX, transY, transZ));
+
+			// 2. Translação da instância do cubo (para não ficarem todos no mesmo lugar)
+			model = glm::translate(model, cubePositions[i]);
+			
+			// 3. Rotação (do projeto base)
+			// Aplica uma rotação inicial para conseguirmos ver que é um objeto 3D de fato (e não 2D olhando de frente)
+			model = glm::rotate(model, glm::radians(30.0f), glm::vec3(1.0f, 1.0f, 0.0f));
+			
+			if (rotateX)
+				model = glm::rotate(model, angle, glm::vec3(1.0f, 0.0f, 0.0f));
+			else if (rotateY)
+				model = glm::rotate(model, angle, glm::vec3(0.0f, 1.0f, 0.0f));
+			else if (rotateZ)
+				model = glm::rotate(model, angle, glm::vec3(0.0f, 0.0f, 1.0f));
+
+			// 4. Escala de Input do usuário
+			model = glm::scale(model, glm::vec3(scaleObj));
+
+			// Para eles não ficarem do mesmo tamanho inicial, multiplicamos uma escala extra em alguns
+			if (i == 1) model = glm::scale(model, glm::vec3(0.5f));
+			if (i == 2) model = glm::scale(model, glm::vec3(0.7f));
+
+			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+			// glDrawArrays(GL_POINTS, 0, 36); // Removido pontos pra não poluir, ou você pode manter
+		}
+		
 		glBindVertexArray(0);
 
 		glfwSwapBuffers(window);
@@ -132,6 +167,20 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		rotateY = false;
 		rotateZ = true;
 	}
+
+	// Comandos de translação (WASD para X/Z, IJ para Y)
+	float moveSpeed = 0.05f;
+	if (key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT)) transZ -= moveSpeed;
+	if (key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT)) transZ += moveSpeed;
+	if (key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT)) transX -= moveSpeed;
+	if (key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT)) transX += moveSpeed;
+	if (key == GLFW_KEY_I && (action == GLFW_PRESS || action == GLFW_REPEAT)) transY += moveSpeed;
+	if (key == GLFW_KEY_J && (action == GLFW_PRESS || action == GLFW_REPEAT)) transY -= moveSpeed;
+
+	// Comandos de escala ([ e ])
+	float scaleSpeed = 0.05f;
+	if (key == GLFW_KEY_LEFT_BRACKET && (action == GLFW_PRESS || action == GLFW_REPEAT)) scaleObj -= scaleSpeed;
+	if (key == GLFW_KEY_RIGHT_BRACKET && (action == GLFW_PRESS || action == GLFW_REPEAT)) scaleObj += scaleSpeed;
 }
 
 int setupShader()
@@ -181,31 +230,53 @@ int setupShader()
 int setupGeometry()
 {
 	GLfloat vertices[] = {
-		// Base da piramide
-		-0.5, -0.5, -0.5, 1.0, 1.0, 0.0,
-		-0.5, -0.5,  0.5, 0.0, 1.0, 1.0,
-		 0.5, -0.5, -0.5, 1.0, 0.0, 1.0,
+		// Face Traseira (Vermelho)
+		-0.25f, -0.25f, -0.25f, 1.0f, 0.0f, 0.0f,
+		 0.25f, -0.25f, -0.25f, 1.0f, 0.0f, 0.0f,
+		 0.25f,  0.25f, -0.25f, 1.0f, 0.0f, 0.0f,
+		 0.25f,  0.25f, -0.25f, 1.0f, 0.0f, 0.0f,
+		-0.25f,  0.25f, -0.25f, 1.0f, 0.0f, 0.0f,
+		-0.25f, -0.25f, -0.25f, 1.0f, 0.0f, 0.0f,
 
-		-0.5, -0.5,  0.5, 1.0, 1.0, 0.0,
-		 0.5, -0.5,  0.5, 0.0, 1.0, 1.0,
-		 0.5, -0.5, -0.5, 1.0, 0.0, 1.0,
+		// Face Frontal (Verde)
+		-0.25f, -0.25f,  0.25f, 0.0f, 1.0f, 0.0f,
+		 0.25f, -0.25f,  0.25f, 0.0f, 1.0f, 0.0f,
+		 0.25f,  0.25f,  0.25f, 0.0f, 1.0f, 0.0f,
+		 0.25f,  0.25f,  0.25f, 0.0f, 1.0f, 0.0f,
+		-0.25f,  0.25f,  0.25f, 0.0f, 1.0f, 0.0f,
+		-0.25f, -0.25f,  0.25f, 0.0f, 1.0f, 0.0f,
 
-		// Faces laterais
-		-0.5, -0.5, -0.5, 1.0, 1.0, 0.0,
-		 0.0,  0.5,  0.0, 1.0, 1.0, 0.0,
-		 0.5, -0.5, -0.5, 1.0, 1.0, 0.0,
+		// Face Esquerda (Azul)
+		-0.25f,  0.25f,  0.25f, 0.0f, 0.0f, 1.0f,
+		-0.25f,  0.25f, -0.25f, 0.0f, 0.0f, 1.0f,
+		-0.25f, -0.25f, -0.25f, 0.0f, 0.0f, 1.0f,
+		-0.25f, -0.25f, -0.25f, 0.0f, 0.0f, 1.0f,
+		-0.25f, -0.25f,  0.25f, 0.0f, 0.0f, 1.0f,
+		-0.25f,  0.25f,  0.25f, 0.0f, 0.0f, 1.0f,
 
-		-0.5, -0.5, -0.5, 1.0, 0.0, 1.0,
-		 0.0,  0.5,  0.0, 1.0, 0.0, 1.0,
-		-0.5, -0.5,  0.5, 1.0, 0.0, 1.0,
+		// Face Direita (Amarelo)
+		 0.25f,  0.25f,  0.25f, 1.0f, 1.0f, 0.0f,
+		 0.25f,  0.25f, -0.25f, 1.0f, 1.0f, 0.0f,
+		 0.25f, -0.25f, -0.25f, 1.0f, 1.0f, 0.0f,
+		 0.25f, -0.25f, -0.25f, 1.0f, 1.0f, 0.0f,
+		 0.25f, -0.25f,  0.25f, 1.0f, 1.0f, 0.0f,
+		 0.25f,  0.25f,  0.25f, 1.0f, 1.0f, 0.0f,
 
-		-0.5, -0.5,  0.5, 1.0, 1.0, 0.0,
-		 0.0,  0.5,  0.0, 1.0, 1.0, 0.0,
-		 0.5, -0.5,  0.5, 1.0, 1.0, 0.0,
+		// Face Inferior (Ciano)
+		-0.25f, -0.25f, -0.25f, 0.0f, 1.0f, 1.0f,
+		 0.25f, -0.25f, -0.25f, 0.0f, 1.0f, 1.0f,
+		 0.25f, -0.25f,  0.25f, 0.0f, 1.0f, 1.0f,
+		 0.25f, -0.25f,  0.25f, 0.0f, 1.0f, 1.0f,
+		-0.25f, -0.25f,  0.25f, 0.0f, 1.0f, 1.0f,
+		-0.25f, -0.25f, -0.25f, 0.0f, 1.0f, 1.0f,
 
-		 0.5, -0.5,  0.5, 0.0, 1.0, 1.0,
-		 0.0,  0.5,  0.0, 0.0, 1.0, 1.0,
-		 0.5, -0.5, -0.5, 0.0, 1.0, 1.0,
+		// Face Superior (Magenta)
+		-0.25f,  0.25f, -0.25f, 1.0f, 0.0f, 1.0f,
+		 0.25f,  0.25f, -0.25f, 1.0f, 0.0f, 1.0f,
+		 0.25f,  0.25f,  0.25f, 1.0f, 0.0f, 1.0f,
+		 0.25f,  0.25f,  0.25f, 1.0f, 0.0f, 1.0f,
+		-0.25f,  0.25f,  0.25f, 1.0f, 0.0f, 1.0f,
+		-0.25f,  0.25f, -0.25f, 1.0f, 0.0f, 1.0f
 	};
 
 	GLuint VBO, VAO;
