@@ -134,6 +134,18 @@ CMakeFiles/Hello3D.dir/src/Hello3D.cpp.obj: \
  C:/msys64/ucrt64/include/c++/13.1.0/bits/ostream.tcc \
  C:/msys64/ucrt64/include/c++/13.1.0/istream \
  C:/msys64/ucrt64/include/c++/13.1.0/bits/istream.tcc \
+ C:/msys64/ucrt64/include/c++/13.1.0/fstream \
+ C:/msys64/ucrt64/include/c++/13.1.0/bits/codecvt.h \
+ C:/msys64/ucrt64/include/c++/13.1.0/x86_64-w64-mingw32/bits/basic_file.h \
+ C:/msys64/ucrt64/include/c++/13.1.0/x86_64-w64-mingw32/bits/c++io.h \
+ C:/msys64/ucrt64/include/c++/13.1.0/bits/fstream.tcc \
+ C:/msys64/ucrt64/include/c++/13.1.0/sstream \
+ C:/msys64/ucrt64/include/c++/13.1.0/bits/sstream.tcc \
+ C:/msys64/ucrt64/include/c++/13.1.0/vector \
+ C:/msys64/ucrt64/include/c++/13.1.0/bits/stl_uninitialized.h \
+ C:/msys64/ucrt64/include/c++/13.1.0/bits/stl_vector.h \
+ C:/msys64/ucrt64/include/c++/13.1.0/bits/stl_bvector.h \
+ C:/msys64/ucrt64/include/c++/13.1.0/bits/vector.tcc \
  C:/Users/BRUNOG~1/Desktop/FACULD~1/PROCES~1/2026/HELLO3~1/include/glad/glad.h \
  C:/Users/BRUNOG~1/Desktop/FACULD~1/PROCES~1/2026/HELLO3~1/include/KHR/khrplatform.h \
  C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/stdint.h \
@@ -202,11 +214,6 @@ CMakeFiles/Hello3D.dir/src/Hello3D.cpp.obj: \
  C:/msys64/ucrt64/include/c++/13.1.0/bits/enable_special_members.h \
  C:/msys64/ucrt64/include/c++/13.1.0/bits/node_handle.h \
  C:/msys64/ucrt64/include/c++/13.1.0/bits/erase_if.h \
- C:/msys64/ucrt64/include/c++/13.1.0/vector \
- C:/msys64/ucrt64/include/c++/13.1.0/bits/stl_uninitialized.h \
- C:/msys64/ucrt64/include/c++/13.1.0/bits/stl_vector.h \
- C:/msys64/ucrt64/include/c++/13.1.0/bits/stl_bvector.h \
- C:/msys64/ucrt64/include/c++/13.1.0/bits/vector.tcc \
  C:/msys64/ucrt64/include/c++/13.1.0/array \
  C:/msys64/ucrt64/include/c++/13.1.0/compare \
  C:/msys64/ucrt64/include/c++/13.1.0/bits/stl_algo.h \
@@ -379,4 +386,12 @@ CMakeFiles/Hello3D.dir/src/Hello3D.cpp.obj: \
  C:/msys64/ucrt64/include/c++/13.1.0/cstring \
  C:/msys64/ucrt64/include/string.h \
  C:/msys64/ucrt64/include/sec_api/string_s.h \
- C:/Users/BRUNOG~1/Desktop/FACULD~1/PROCES~1/2026/HELLO3~1/build/_deps/glm-src/glm/gtc/type_ptr.inl
+ C:/Users/BRUNOG~1/Desktop/FACULD~1/PROCES~1/2026/HELLO3~1/build/_deps/glm-src/glm/gtc/type_ptr.inl \
+ C:/Users/BRUNOG~1/Desktop/FACULD~1/PROCES~1/2026/HELLO3~1/include/stb_image.h \
+ C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/stdarg.h \
+ C:/msys64/ucrt64/include/stdarg.h \
+ C:/msys64/ucrt64/include/_mingw_stdarg.h \
+ C:/msys64/ucrt64/include/c++/13.1.0/math.h \
+ C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/emmintrin.h \
+ C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/xmmintrin.h \
+ C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/mmintrin.h
