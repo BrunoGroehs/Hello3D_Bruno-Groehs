@@ -53,8 +53,9 @@ const GLchar* fragmentShaderSource = "#version 330\n"
 "in vec3 FragPos;\n"
 "uniform sampler2D texBuffer;\n"
 "uniform int useTexture;\n"
-"uniform vec3 lightPos;\n"
-"uniform vec3 lightColor;\n"
+"uniform vec3 lightPos[3];\n"
+"uniform vec3 lightColor[3];\n"
+"uniform int lightEnable[3];\n"
 "uniform vec3 viewPos;\n"
 "uniform vec3 ka;\n"
 "uniform vec3 kd;\n"
@@ -63,27 +64,43 @@ const GLchar* fragmentShaderSource = "#version 330\n"
 "out vec4 color;\n"
 "void main()\n"
 "{\n"
-"    vec3 ambient = 0.2 * ka * lightColor;\n"
 "    vec3 norm = normalize(Normal);\n"
-"    vec3 lightDir = normalize(lightPos - FragPos);\n"
-"    float diff = max(dot(norm, lightDir), 0.0);\n"
-"    vec3 diffuse = kd * diff * lightColor;\n"
-"    vec3 viewDir = normalize(viewPos);\n"
-"    if (viewPos != vec3(0.0)) { viewDir = normalize(viewPos - FragPos); }\n"
-"    vec3 reflectDir = reflect(-lightDir, norm);\n"
-"    float spec = pow(max(dot(viewDir, reflectDir), 0.0), max(ns, 1.0));\n"
-"    vec3 specular = ks * spec * lightColor;\n"
+"    vec3 viewDir = normalize(viewPos - FragPos);\n"
+"    vec3 totalLighting = vec3(0.0);\n"
+"    for(int i = 0; i < 3; i++) {\n"
+"        if (lightEnable[i] == 0) continue;\n"
+"        float distance = length(lightPos[i] - FragPos);\n"
+"        // Fator de atenuação para a luz pontual\n"
+"        float attenuation = 1.0 / (1.0 + 0.09 * distance + 0.032 * (distance * distance));\n"
+"        \n"
+"        vec3 ambient = 0.2 * ka * lightColor[i];\n"
+"        \n"
+"        vec3 lightDir = normalize(lightPos[i] - FragPos);\n"
+"        float diff = max(dot(norm, lightDir), 0.0);\n"
+"        // Atenuação aplicada na parcela difusa e especular\n"
+"        vec3 diffuse = kd * diff * lightColor[i] * attenuation;\n"
+"        \n"
+"        vec3 reflectDir = reflect(-lightDir, norm);\n"
+"        float spec = pow(max(dot(viewDir, reflectDir), 0.0), max(ns, 1.0));\n"
+"        vec3 specular = ks * spec * lightColor[i] * attenuation;\n"
+"        \n"
+"        totalLighting += (ambient + diffuse + specular);\n"
+"    }\n"
 "    vec3 objColor;\n"
 "    if (useTexture == 1) {\n"
 "        objColor = texture(texBuffer, texCoordFrag).rgb;\n"
 "    } else {\n"
 "        objColor = finalColor.rgb;\n"
 "    }\n"
-"    vec3 result = (ambient + diffuse + specular) * objColor;\n"
-"    color = vec4(result, 1.0);\n"
+"    color = vec4(totalLighting * objColor, 1.0);\n"
 "}\n\0";
 
 bool rotateX = false, rotateY = false, rotateZ = false;
+
+// Toggles das luzes pontuais do sistema de 3 pontos
+bool enableKeyLight = true;
+bool enableFillLight = true;
+bool enableBackLight = true;
 
 // Variáveis para translação e escala
 float transX = 0.0f, transY = 0.0f, transZ = 0.0f;
@@ -115,7 +132,7 @@ int main()
 	GLuint shaderID = setupShader();
 
 	// Carrega o OBJ (com vt/vn) e o MTL referenciado, e a textura difusa (map_Kd) do MTL.
-	string objPath = "Modelos3D/cube.obj";
+	string objPath = "Modelos3D/Suzanne.obj";
 	string modelDir = "Modelos3D/";
 
 	int nVertices = 0;
@@ -153,8 +170,22 @@ int main()
 	
 	// Phong uniforms
 	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-	glUniform3f(glGetUniformLocation(shaderID, "lightPos"), 0.0f, 5.0f, 5.0f);
-	glUniform3f(glGetUniformLocation(shaderID, "lightColor"), 1.0f, 1.0f, 1.0f);
+	
+	// Array de posições das luzes com base no objeto principal (0,0,0)
+	glm::vec3 lightPositions[] = {
+		glm::vec3(1.5f, 1.5f, 2.0f),   // Key light: Direita, cima, frente -> Luz Principal Intensa
+		glm::vec3(-1.5f, 0.5f, 2.0f),  // Fill light: Esquerda, frente (mais baixa) -> Suavizar
+		glm::vec3(0.0f, 2.0f, -2.5f)   // Back light: Atrás, cima -> Profundidade/Fundo
+	};
+	// Intensidades de cores p/ cada luz
+	glm::vec3 lightColors[] = {
+		glm::vec3(1.0f, 1.0f, 1.0f),   // Key: Mais forte
+		glm::vec3(0.4f, 0.4f, 0.4f),   // Fill: Preenchimento Suave
+		glm::vec3(0.8f, 0.8f, 0.8f)    // Back: Destacar bordas/fundo
+	};
+
+	glUniform3fv(glGetUniformLocation(shaderID, "lightPos"), 3, glm::value_ptr(lightPositions[0]));
+	glUniform3fv(glGetUniformLocation(shaderID, "lightColor"), 3, glm::value_ptr(lightColors[0]));
 	glUniform3fv(glGetUniformLocation(shaderID, "viewPos"), 1, glm::value_ptr(cameraPos));
 	glUniform3fv(glGetUniformLocation(shaderID, "ka"), 1, glm::value_ptr(ka));
 	glUniform3fv(glGetUniformLocation(shaderID, "kd"), 1, glm::value_ptr(kd));
@@ -173,13 +204,6 @@ int main()
 	glm::mat4 view = glm::lookAt(cameraPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 
-	// Posições dos cubos instanciados
-	glm::vec3 cubePositions[] = {
-		glm::vec3(0.0f,  0.0f,  0.0f),
-		glm::vec3(0.5f,  0.5f, -0.5f),
-		glm::vec3(-0.5f, -0.4f,  0.2f)
-	};
-
 	while (!glfwWindowShouldClose(window))
 	{
 		glfwPollEvents();
@@ -192,6 +216,10 @@ int main()
 
 		float angle = (GLfloat)glfwGetTime();
 
+		// Atualiza o estado das luzes pro Shader via uniform
+		int lightEnables[] = {enableKeyLight ? 1 : 0, enableFillLight ? 1 : 0, enableBackLight ? 1 : 0};
+		glUniform1iv(glGetUniformLocation(shaderID, "lightEnable"), 3, lightEnables);
+
 		if (useTexture == 1)
 		{
 			glActiveTexture(GL_TEXTURE0);
@@ -200,38 +228,26 @@ int main()
 
 		glBindVertexArray(VAO);
 
-		// Loop para desenhar múltiplos cubos
-		for (int i = 0; i < 3; i++)
-		{
-			glm::mat4 model = glm::mat4(1);
+		// Desenhar a Suzanne (apenas um objeto principal)
+		glm::mat4 model = glm::mat4(1);
 
-			// 1. Translação de input do usuário
-			model = glm::translate(model, glm::vec3(transX, transY, transZ));
+		// 1. Translação de input do usuário
+		model = glm::translate(model, glm::vec3(transX, transY, transZ));
 
-			// 2. Translação da instância do cubo (para não ficarem todos no mesmo lugar)
-			model = glm::translate(model, cubePositions[i]);
+		// 2. Rotação do objeto
+		if (rotateX)
+			model = glm::rotate(model, angle, glm::vec3(1.0f, 0.0f, 0.0f));
+		else if (rotateY)
+			model = glm::rotate(model, angle, glm::vec3(0.0f, 1.0f, 0.0f));
+		else if (rotateZ)
+			model = glm::rotate(model, angle, glm::vec3(0.0f, 0.0f, 1.0f));
 
-			// 3. Rotação (do projeto base)
-			model = glm::rotate(model, glm::radians(30.0f), glm::vec3(1.0f, 1.0f, 0.0f));
+		// 3. Escala de input do usuário
+		model = glm::scale(model, glm::vec3(scaleObj));
 
-			if (rotateX)
-				model = glm::rotate(model, angle, glm::vec3(1.0f, 0.0f, 0.0f));
-			else if (rotateY)
-				model = glm::rotate(model, angle, glm::vec3(0.0f, 1.0f, 0.0f));
-			else if (rotateZ)
-				model = glm::rotate(model, angle, glm::vec3(0.0f, 0.0f, 1.0f));
+		glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
-			// 4. Escala de input do usuário
-			model = glm::scale(model, glm::vec3(scaleObj));
-
-			// Para os cubos não ficarem do mesmo tamanho, multiplicamos uma escala extra em alguns
-			if (i == 1) model = glm::scale(model, glm::vec3(0.5f));
-			if (i == 2) model = glm::scale(model, glm::vec3(0.7f));
-
-			glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
-			glDrawArrays(GL_TRIANGLES, 0, nVertices);
-		}
+		glDrawArrays(GL_TRIANGLES, 0, nVertices);
 
 		glBindVertexArray(0);
 
@@ -269,6 +285,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		rotateY = false;
 		rotateZ = true;
 	}
+
+	// Comandos de ativação das luzes do sistema 3 Points
+	if (key == GLFW_KEY_1 && action == GLFW_PRESS) enableKeyLight = !enableKeyLight;
+	if (key == GLFW_KEY_2 && action == GLFW_PRESS) enableFillLight = !enableFillLight;
+	if (key == GLFW_KEY_3 && action == GLFW_PRESS) enableBackLight = !enableBackLight;
 
 	// Comandos de translação (WASD para Y/X, IK para Z)
 	float moveSpeed = 0.05f;
