@@ -19,7 +19,7 @@ using namespace std;
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 int setupShader();
 int loadSimpleOBJ(string filePath, int &nVertices, string &mtlFileName);
-string loadMTL(string filePath, string &textureFileName);
+string loadMTL(string filePath, string &textureFileName, glm::vec3 &ka, glm::vec3 &kd, glm::vec3 &ks, float &ns);
 GLuint loadTexture(string filePath);
 
 const GLuint WIDTH = 1000, HEIGHT = 1000;
@@ -29,12 +29,19 @@ const GLchar* vertexShaderSource = "#version 330\n"
 "layout (location = 0) in vec3 position;\n"
 "layout (location = 1) in vec3 color;\n"
 "layout (location = 2) in vec2 texCoord;\n"
+"layout (location = 3) in vec3 normal;\n"
 "uniform mat4 model;\n"
+"uniform mat4 view;\n"
+"uniform mat4 projection;\n"
 "out vec4 finalColor;\n"
 "out vec2 texCoordFrag;\n"
+"out vec3 Normal;\n"
+"out vec3 FragPos;\n"
 "void main()\n"
 "{\n"
-"    gl_Position = model * vec4(position, 1.0);\n"
+"    gl_Position = projection * view * model * vec4(position, 1.0);\n"
+"    FragPos = vec3(model * vec4(position, 1.0));\n"
+"    Normal = mat3(transpose(inverse(model))) * normal;\n"
 "    finalColor = vec4(color, 1.0);\n"
 "    texCoordFrag = texCoord;\n"
 "}\0";
@@ -42,16 +49,38 @@ const GLchar* vertexShaderSource = "#version 330\n"
 const GLchar* fragmentShaderSource = "#version 330\n"
 "in vec4 finalColor;\n"
 "in vec2 texCoordFrag;\n"
+"in vec3 Normal;\n"
+"in vec3 FragPos;\n"
 "uniform sampler2D texBuffer;\n"
 "uniform int useTexture;\n"
+"uniform vec3 lightPos;\n"
+"uniform vec3 lightColor;\n"
+"uniform vec3 viewPos;\n"
+"uniform vec3 ka;\n"
+"uniform vec3 kd;\n"
+"uniform vec3 ks;\n"
+"uniform float ns;\n"
 "out vec4 color;\n"
 "void main()\n"
 "{\n"
+"    vec3 ambient = 0.2 * ka * lightColor;\n"
+"    vec3 norm = normalize(Normal);\n"
+"    vec3 lightDir = normalize(lightPos - FragPos);\n"
+"    float diff = max(dot(norm, lightDir), 0.0);\n"
+"    vec3 diffuse = kd * diff * lightColor;\n"
+"    vec3 viewDir = normalize(viewPos);\n"
+"    if (viewPos != vec3(0.0)) { viewDir = normalize(viewPos - FragPos); }\n"
+"    vec3 reflectDir = reflect(-lightDir, norm);\n"
+"    float spec = pow(max(dot(viewDir, reflectDir), 0.0), max(ns, 1.0));\n"
+"    vec3 specular = ks * spec * lightColor;\n"
+"    vec3 objColor;\n"
 "    if (useTexture == 1) {\n"
-"        color = texture(texBuffer, texCoordFrag);\n"
+"        objColor = texture(texBuffer, texCoordFrag).rgb;\n"
 "    } else {\n"
-"        color = finalColor;\n"
+"        objColor = finalColor.rgb;\n"
 "    }\n"
+"    vec3 result = (ambient + diffuse + specular) * objColor;\n"
+"    color = vec4(result, 1.0);\n"
 "}\n\0";
 
 bool rotateX = false, rotateY = false, rotateZ = false;
@@ -86,8 +115,8 @@ int main()
 	GLuint shaderID = setupShader();
 
 	// Carrega o OBJ (com vt/vn) e o MTL referenciado, e a textura difusa (map_Kd) do MTL.
-	string objPath = "../Modelos3D/cube.obj";
-	string modelDir = "../Modelos3D/";
+	string objPath = "Modelos3D/cube.obj";
+	string modelDir = "Modelos3D/";
 
 	int nVertices = 0;
 	string mtlFileName;
@@ -100,10 +129,13 @@ int main()
 
 	GLuint texID = 0;
 	int useTexture = 0;
+	glm::vec3 ka(0.2f), kd(0.8f), ks(0.5f);
+	float ns = 32.0f;
+
 	if (!mtlFileName.empty())
 	{
 		string textureFileName;
-		loadMTL(modelDir + mtlFileName, textureFileName);
+		loadMTL(modelDir + mtlFileName, textureFileName, ka, kd, ks, ns);
 		if (!textureFileName.empty())
 		{
 			texID = loadTexture(modelDir + textureFileName);
@@ -114,12 +146,32 @@ int main()
 	glUseProgram(shaderID);
 
 	GLint modelLoc = glGetUniformLocation(shaderID, "model");
+	GLint viewLoc = glGetUniformLocation(shaderID, "view");
+	GLint projLoc = glGetUniformLocation(shaderID, "projection");
 	GLint texLoc = glGetUniformLocation(shaderID, "texBuffer");
 	GLint useTexLoc = glGetUniformLocation(shaderID, "useTexture");
+	
+	// Phong uniforms
+	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
+	glUniform3f(glGetUniformLocation(shaderID, "lightPos"), 0.0f, 5.0f, 5.0f);
+	glUniform3f(glGetUniformLocation(shaderID, "lightColor"), 1.0f, 1.0f, 1.0f);
+	glUniform3fv(glGetUniformLocation(shaderID, "viewPos"), 1, glm::value_ptr(cameraPos));
+	glUniform3fv(glGetUniformLocation(shaderID, "ka"), 1, glm::value_ptr(ka));
+	glUniform3fv(glGetUniformLocation(shaderID, "kd"), 1, glm::value_ptr(kd));
+	glUniform3fv(glGetUniformLocation(shaderID, "ks"), 1, glm::value_ptr(ks));
+	glUniform1f(glGetUniformLocation(shaderID, "ns"), ns);
+
 	glUniform1i(texLoc, 0);
 	glUniform1i(useTexLoc, useTexture);
 
 	glEnable(GL_DEPTH_TEST);
+
+	// Matriz de projeção e view
+	glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
+	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+	glm::mat4 view = glm::lookAt(cameraPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
 
 	// Posições dos cubos instanciados
 	glm::vec3 cubePositions[] = {
@@ -218,14 +270,14 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		rotateZ = true;
 	}
 
-	// Comandos de translação (WASD para X/Z, IJ para Y)
+	// Comandos de translação (WASD para Y/X, IK para Z)
 	float moveSpeed = 0.05f;
-	if (key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT)) transZ -= moveSpeed;
-	if (key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT)) transZ += moveSpeed;
+	if (key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT)) transY += moveSpeed;
+	if (key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT)) transY -= moveSpeed;
 	if (key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT)) transX -= moveSpeed;
 	if (key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT)) transX += moveSpeed;
-	if (key == GLFW_KEY_I && (action == GLFW_PRESS || action == GLFW_REPEAT)) transY += moveSpeed;
-	if (key == GLFW_KEY_J && (action == GLFW_PRESS || action == GLFW_REPEAT)) transY -= moveSpeed;
+	if (key == GLFW_KEY_I && (action == GLFW_PRESS || action == GLFW_REPEAT)) transZ -= moveSpeed;
+	if (key == GLFW_KEY_K && (action == GLFW_PRESS || action == GLFW_REPEAT)) transZ += moveSpeed;
 
 	// Comandos de escala ([ e ])
 	float scaleSpeed = 0.05f;
@@ -357,7 +409,20 @@ int loadSimpleOBJ(string filePath, int &nVertices, string &mtlFileName)
 					vBuffer.push_back(0.0f);
 					vBuffer.push_back(0.0f);
 				}
-				(void)ni;
+
+				// Normal
+				if (ni >= 0 && ni < (int)normals.size())
+				{
+					vBuffer.push_back(normals[ni].x);
+					vBuffer.push_back(normals[ni].y);
+					vBuffer.push_back(normals[ni].z);
+				}
+				else
+				{
+					vBuffer.push_back(0.0f);
+					vBuffer.push_back(0.0f);
+					vBuffer.push_back(1.0f);
+				}
 			}
 		}
 	}
@@ -374,27 +439,31 @@ int loadSimpleOBJ(string filePath, int &nVertices, string &mtlFileName)
 	glBindVertexArray(VAO);
 
 	// Posição (location = 0): 3 floats
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)0);
 	glEnableVertexAttribArray(0);
 
 	// Cor (location = 1): 3 floats
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(1);
 
 	// Coordenadas de textura (location = 2): 2 floats
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
 	glEnableVertexAttribArray(2);
+
+	// Normais (location = 3): 3 floats
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11 * sizeof(GLfloat), (GLvoid*)(8 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(3);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
-	nVertices = vBuffer.size() / 8;
+	nVertices = vBuffer.size() / 11;
 
 	return VAO;
 }
 
 // Lê um arquivo .MTL recuperando, por enquanto, apenas o nome da textura difusa (map_Kd).
-string loadMTL(string filePath, string &textureFileName)
+string loadMTL(string filePath, string &textureFileName, glm::vec3 &ka, glm::vec3 &kd, glm::vec3 &ks, float &ns)
 {
 	string materialName;
 	ifstream arq(filePath.c_str());
@@ -418,6 +487,22 @@ string loadMTL(string filePath, string &textureFileName)
 		else if (word == "map_Kd")
 		{
 			ss >> textureFileName;
+		}
+		else if (word == "Ka")
+		{
+			ss >> ka.r >> ka.g >> ka.b;
+		}
+		else if (word == "Kd")
+		{
+			ss >> kd.r >> kd.g >> kd.b;
+		}
+		else if (word == "Ks")
+		{
+			ss >> ks.r >> ks.g >> ks.b;
+		}
+		else if (word == "Ns")
+		{
+			ss >> ns;
 		}
 	}
 	arq.close();

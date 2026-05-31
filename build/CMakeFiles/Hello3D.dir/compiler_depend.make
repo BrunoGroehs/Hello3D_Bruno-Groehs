@@ -453,6 +453,7 @@ CMakeFiles/Hello3D.dir/src/Hello3D.cpp.obj: C:/Users/Bruno\ Groehs/Desktop/FACUL
   _deps/glm-src/glm/vec4.hpp \
   C:/Users/Bruno\ Groehs/Desktop/FACULDADE/Processamento\ Grafico/2026/Hello3D_Bruno-Groehs/include/KHR/khrplatform.h \
   C:/Users/Bruno\ Groehs/Desktop/FACULDADE/Processamento\ Grafico/2026/Hello3D_Bruno-Groehs/include/glad/glad.h \
+  C:/Users/Bruno\ Groehs/Desktop/FACULDADE/Processamento\ Grafico/2026/Hello3D_Bruno-Groehs/include/stb_image.h \
   _deps/glm-src/glm/common.hpp \
   _deps/glm-src/glm/detail/_fixes.hpp \
   _deps/glm-src/glm/detail/compute_common.hpp \
@@ -473,6 +474,7 @@ CMakeFiles/Hello3D.dir/src/Hello3D.cpp.obj: C:/Users/Bruno\ Groehs/Desktop/FACUL
   C:/msys64/ucrt64/include/_mingw_off_t.h \
   C:/msys64/ucrt64/include/_mingw_secapi.h \
   C:/msys64/ucrt64/include/_mingw_stat64.h \
+  C:/msys64/ucrt64/include/_mingw_stdarg.h \
   C:/msys64/ucrt64/include/_timeval.h \
   C:/msys64/ucrt64/include/assert.h \
   C:/msys64/ucrt64/include/c++/13.1.0/array \
@@ -487,6 +489,7 @@ CMakeFiles/Hello3D.dir/src/Hello3D.cpp.obj: C:/Users/Bruno\ Groehs/Desktop/FACUL
   C:/msys64/ucrt64/include/c++/13.1.0/bits/basic_string.tcc \
   C:/msys64/ucrt64/include/c++/13.1.0/bits/char_traits.h \
   C:/msys64/ucrt64/include/c++/13.1.0/bits/charconv.h \
+  C:/msys64/ucrt64/include/c++/13.1.0/bits/codecvt.h \
   C:/msys64/ucrt64/include/c++/13.1.0/bits/concept_check.h \
   C:/msys64/ucrt64/include/c++/13.1.0/bits/cpp_type_traits.h \
   C:/msys64/ucrt64/include/c++/13.1.0/bits/cxxabi_forced.h \
@@ -496,6 +499,7 @@ CMakeFiles/Hello3D.dir/src/Hello3D.cpp.obj: C:/Users/Bruno\ Groehs/Desktop/FACUL
   C:/msys64/ucrt64/include/c++/13.1.0/bits/exception.h \
   C:/msys64/ucrt64/include/c++/13.1.0/bits/exception_defines.h \
   C:/msys64/ucrt64/include/c++/13.1.0/bits/exception_ptr.h \
+  C:/msys64/ucrt64/include/c++/13.1.0/bits/fstream.tcc \
   C:/msys64/ucrt64/include/c++/13.1.0/bits/functexcept.h \
   C:/msys64/ucrt64/include/c++/13.1.0/bits/functional_hash.h \
   C:/msys64/ucrt64/include/c++/13.1.0/bits/hash_bytes.h \
@@ -524,6 +528,7 @@ CMakeFiles/Hello3D.dir/src/Hello3D.cpp.obj: C:/Users/Bruno\ Groehs/Desktop/FACUL
   C:/msys64/ucrt64/include/c++/13.1.0/bits/refwrap.h \
   C:/msys64/ucrt64/include/c++/13.1.0/bits/requires_hosted.h \
   C:/msys64/ucrt64/include/c++/13.1.0/bits/specfun.h \
+  C:/msys64/ucrt64/include/c++/13.1.0/bits/sstream.tcc \
   C:/msys64/ucrt64/include/c++/13.1.0/bits/std_abs.h \
   C:/msys64/ucrt64/include/c++/13.1.0/bits/std_function.h \
   C:/msys64/ucrt64/include/c++/13.1.0/bits/stl_algo.h \
@@ -573,6 +578,7 @@ CMakeFiles/Hello3D.dir/src/Hello3D.cpp.obj: C:/Users/Bruno\ Groehs/Desktop/FACUL
   C:/msys64/ucrt64/include/c++/13.1.0/ext/numeric_traits.h \
   C:/msys64/ucrt64/include/c++/13.1.0/ext/string_conversions.h \
   C:/msys64/ucrt64/include/c++/13.1.0/ext/type_traits.h \
+  C:/msys64/ucrt64/include/c++/13.1.0/fstream \
   C:/msys64/ucrt64/include/c++/13.1.0/functional \
   C:/msys64/ucrt64/include/c++/13.1.0/initializer_list \
   C:/msys64/ucrt64/include/c++/13.1.0/ios \
@@ -580,9 +586,11 @@ CMakeFiles/Hello3D.dir/src/Hello3D.cpp.obj: C:/Users/Bruno\ Groehs/Desktop/FACUL
   C:/msys64/ucrt64/include/c++/13.1.0/iostream \
   C:/msys64/ucrt64/include/c++/13.1.0/istream \
   C:/msys64/ucrt64/include/c++/13.1.0/limits \
+  C:/msys64/ucrt64/include/c++/13.1.0/math.h \
   C:/msys64/ucrt64/include/c++/13.1.0/new \
   C:/msys64/ucrt64/include/c++/13.1.0/ostream \
   C:/msys64/ucrt64/include/c++/13.1.0/pstl/pstl_config.h \
+  C:/msys64/ucrt64/include/c++/13.1.0/sstream \
   C:/msys64/ucrt64/include/c++/13.1.0/stdexcept \
   C:/msys64/ucrt64/include/c++/13.1.0/stdlib.h \
   C:/msys64/ucrt64/include/c++/13.1.0/streambuf \
@@ -607,8 +615,10 @@ CMakeFiles/Hello3D.dir/src/Hello3D.cpp.obj: C:/Users/Bruno\ Groehs/Desktop/FACUL
   C:/msys64/ucrt64/include/c++/13.1.0/unordered_map \
   C:/msys64/ucrt64/include/c++/13.1.0/vector \
   C:/msys64/ucrt64/include/c++/13.1.0/x86_64-w64-mingw32/bits/atomic_word.h \
+  C:/msys64/ucrt64/include/c++/13.1.0/x86_64-w64-mingw32/bits/basic_file.h \
   C:/msys64/ucrt64/include/c++/13.1.0/x86_64-w64-mingw32/bits/c++allocator.h \
   C:/msys64/ucrt64/include/c++/13.1.0/x86_64-w64-mingw32/bits/c++config.h \
+  C:/msys64/ucrt64/include/c++/13.1.0/x86_64-w64-mingw32/bits/c++io.h \
   C:/msys64/ucrt64/include/c++/13.1.0/x86_64-w64-mingw32/bits/c++locale.h \
   C:/msys64/ucrt64/include/c++/13.1.0/x86_64-w64-mingw32/bits/cpu_defines.h \
   C:/msys64/ucrt64/include/c++/13.1.0/x86_64-w64-mingw32/bits/ctype_base.h \
@@ -642,6 +652,7 @@ CMakeFiles/Hello3D.dir/src/Hello3D.cpp.obj: C:/Users/Bruno\ Groehs/Desktop/FACUL
   C:/msys64/ucrt64/include/sec_api/sys/timeb_s.h \
   C:/msys64/ucrt64/include/sec_api/wchar_s.h \
   C:/msys64/ucrt64/include/signal.h \
+  C:/msys64/ucrt64/include/stdarg.h \
   C:/msys64/ucrt64/include/stddef.h \
   C:/msys64/ucrt64/include/stdint.h \
   C:/msys64/ucrt64/include/stdio.h \
@@ -654,12 +665,16 @@ CMakeFiles/Hello3D.dir/src/Hello3D.cpp.obj: C:/Users/Bruno\ Groehs/Desktop/FACUL
   C:/msys64/ucrt64/include/vadefs.h \
   C:/msys64/ucrt64/include/wchar.h \
   C:/msys64/ucrt64/include/wctype.h \
+  C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/emmintrin.h \
   C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/float.h \
   C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/limits.h \
   C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/mm_malloc.h \
+  C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/mmintrin.h \
+  C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/stdarg.h \
   C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/stddef.h \
   C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/stdint.h \
-  C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/syslimits.h
+  C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/syslimits.h \
+  C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/xmmintrin.h
 
 
 C:/msys64/ucrt64/include/commdlg.h:
@@ -728,6 +743,8 @@ C:/msys64/ucrt64/include/winsvc.h:
 
 C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/clflushoptintrin.h:
 
+C:/msys64/ucrt64/include/c++/13.1.0/bits/sstream.tcc:
+
 C:/msys64/ucrt64/include/_mingw_off_t.h:
 
 C:/msys64/ucrt64/include/c++/13.1.0/bits/uses_allocator_args.h:
@@ -775,6 +792,8 @@ C:/msys64/ucrt64/include/mcx.h:
 C:/msys64/ucrt64/include/malloc.h:
 
 C:/msys64/ucrt64/include/basetsd.h:
+
+C:/msys64/ucrt64/include/c++/13.1.0/x86_64-w64-mingw32/bits/basic_file.h:
 
 C:/msys64/ucrt64/include/errhandlingapi.h:
 
@@ -1012,6 +1031,8 @@ _deps/glm-src/glm/ext/matrix_projection.inl:
 
 C:/msys64/ucrt64/include/pshpack4.h:
 
+C:/msys64/ucrt64/include/c++/13.1.0/x86_64-w64-mingw32/bits/c++io.h:
+
 _deps/glm-src/glm/ext/vector_int3.hpp:
 
 C:/msys64/ucrt64/include/pshpack8.h:
@@ -1168,6 +1189,8 @@ C:/msys64/ucrt64/include/winefs.h:
 
 C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/avx512bf16vlintrin.h:
 
+C:/Users/Bruno\ Groehs/Desktop/FACULDADE/Processamento\ Grafico/2026/Hello3D_Bruno-Groehs/include/stb_image.h:
+
 C:/msys64/ucrt64/include/winioctl.h:
 
 C:/msys64/ucrt64/include/winnetwk.h:
@@ -1312,9 +1335,9 @@ C:/msys64/ucrt64/include/c++/13.1.0/tr1/ell_integral.tcc:
 
 C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/fma4intrin.h:
 
-C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/fmaintrin.h:
-
 C:/msys64/ucrt64/include/c++/13.1.0/bits/stl_bvector.h:
+
+C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/fmaintrin.h:
 
 C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/gfniintrin.h:
 
@@ -1429,6 +1452,8 @@ _deps/glfw-src/include/GLFW/glfw3.h:
 _deps/glm-src/glm/detail/type_mat2x3.hpp:
 
 _deps/glm-src/glm/ext/quaternion_transform.hpp:
+
+C:/msys64/ucrt64/include/c++/13.1.0/bits/fstream.tcc:
 
 _deps/glm-src/glm/detail/type_mat2x3.inl:
 
@@ -1568,11 +1593,11 @@ _deps/glm-src/glm/detail/type_vec2.hpp:
 
 _deps/glm-src/glm/detail/type_vec3.hpp:
 
+C:/msys64/ucrt64/include/c++/13.1.0/bits/stl_algobase.h:
+
 C:/msys64/ucrt64/include/c++/13.1.0/bits/basic_string.tcc:
 
 C:/msys64/ucrt64/include/c++/13.1.0/bits/invoke.h:
-
-C:/msys64/ucrt64/include/c++/13.1.0/bits/stl_algobase.h:
 
 _deps/glm-src/glm/detail/type_vec3.inl:
 
@@ -1607,6 +1632,8 @@ _deps/glm-src/glm/ext/vector_float3.hpp:
 _deps/glm-src/glm/ext/vector_float4_precision.hpp:
 
 _deps/glm-src/glm/detail/func_common.inl:
+
+C:/msys64/ucrt64/include/c++/13.1.0/math.h:
 
 _deps/glm-src/glm/ext/vector_int3_sized.hpp:
 
@@ -1728,6 +1755,8 @@ C:/msys64/ucrt64/include/c++/13.1.0/bits/charconv.h:
 
 C:/msys64/ucrt64/include/c++/13.1.0/bits/exception_ptr.h:
 
+C:/msys64/ucrt64/include/c++/13.1.0/bits/codecvt.h:
+
 C:/msys64/ucrt64/include/c++/13.1.0/bits/cxxabi_forced.h:
 
 C:/msys64/ucrt64/include/c++/13.1.0/bits/exception.h:
@@ -1818,6 +1847,8 @@ C:/msys64/ucrt64/include/c++/13.1.0/ext/string_conversions.h:
 
 C:/msys64/ucrt64/include/c++/13.1.0/ext/type_traits.h:
 
+C:/msys64/ucrt64/include/c++/13.1.0/fstream:
+
 C:/msys64/ucrt64/include/c++/13.1.0/functional:
 
 C:/msys64/ucrt64/include/c++/13.1.0/initializer_list:
@@ -1827,6 +1858,8 @@ C:/msys64/ucrt64/include/c++/13.1.0/istream:
 C:/msys64/ucrt64/include/c++/13.1.0/limits:
 
 C:/msys64/ucrt64/include/c++/13.1.0/pstl/pstl_config.h:
+
+C:/msys64/ucrt64/include/c++/13.1.0/sstream:
 
 C:/msys64/ucrt64/include/c++/13.1.0/stdexcept:
 
