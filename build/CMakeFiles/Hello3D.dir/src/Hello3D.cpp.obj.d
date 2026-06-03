@@ -394,4 +394,5 @@ CMakeFiles/Hello3D.dir/src/Hello3D.cpp.obj: \
  C:/msys64/ucrt64/include/c++/13.1.0/math.h \
  C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/emmintrin.h \
  C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/xmmintrin.h \
- C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/mmintrin.h
+ C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/mmintrin.h \
+ C:/Users/BRUNOG~1/Desktop/FACULD~1/PROCES~1/2026/HELLO3~1/include/Camera.h

@@ -41,3 +41,6 @@ endif()
 add_executable(Hello3D src/Hello3D.cpp ${GLAD_C_FILE})
 target_include_directories(Hello3D PRIVATE ${CMAKE_SOURCE_DIR}/include/glad ${glm_SOURCE_DIR})
 target_link_libraries(Hello3D glfw ${OPENGL_LIBS})
+
+file(COPY ${CMAKE_SOURCE_DIR}/Modelos3D DESTINATION ${CMAKE_BINARY_DIR})
+

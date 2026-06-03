@@ -16,7 +16,13 @@ using namespace std;
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#include <Camera.h>
+
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
+void mouse_callback(GLFWwindow* window, double xpos, double ypos);
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+void processInput(GLFWwindow *window);
+
 int setupShader();
 int loadSimpleOBJ(string filePath, int &nVertices, string &mtlFileName);
 string loadMTL(string filePath, string &textureFileName, glm::vec3 &ka, glm::vec3 &kd, glm::vec3 &ks, float &ns);
@@ -102,8 +108,17 @@ bool enableKeyLight = true;
 bool enableFillLight = true;
 bool enableBackLight = true;
 
-// Variáveis para translação e escala
-float transX = 0.0f, transY = 0.0f, transZ = 0.0f;
+// camera
+Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+float lastX = WIDTH / 2.0f;
+float lastY = HEIGHT / 2.0f;
+bool firstMouse = true;
+
+// timing
+float deltaTime = 0.0f;	// time between current frame and last frame
+float lastFrame = 0.0f;
+
+// Variáveis para escala
 float scaleObj = 1.0f;
 
 int main()
@@ -113,6 +128,11 @@ int main()
 	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Ola 3D Texturizado -- Bruno Groehs", nullptr, nullptr);
 	glfwMakeContextCurrent(window);
 	glfwSetKeyCallback(window, key_callback);
+	glfwSetCursorPosCallback(window, mouse_callback);
+	glfwSetScrollCallback(window, scroll_callback);
+
+	// Traz o mouse capture para uso com a câmera
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
@@ -169,8 +189,6 @@ int main()
 	GLint useTexLoc = glGetUniformLocation(shaderID, "useTexture");
 	
 	// Phong uniforms
-	glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 3.0f);
-	
 	// Array de posições das luzes com base no objeto principal (0,0,0)
 	glm::vec3 lightPositions[] = {
 		glm::vec3(1.5f, 1.5f, 2.0f),   // Key light: Direita, cima, frente -> Luz Principal Intensa
@@ -186,7 +204,7 @@ int main()
 
 	glUniform3fv(glGetUniformLocation(shaderID, "lightPos"), 3, glm::value_ptr(lightPositions[0]));
 	glUniform3fv(glGetUniformLocation(shaderID, "lightColor"), 3, glm::value_ptr(lightColors[0]));
-	glUniform3fv(glGetUniformLocation(shaderID, "viewPos"), 1, glm::value_ptr(cameraPos));
+	glUniform3fv(glGetUniformLocation(shaderID, "viewPos"), 1, glm::value_ptr(camera.Position));
 	glUniform3fv(glGetUniformLocation(shaderID, "ka"), 1, glm::value_ptr(ka));
 	glUniform3fv(glGetUniformLocation(shaderID, "kd"), 1, glm::value_ptr(kd));
 	glUniform3fv(glGetUniformLocation(shaderID, "ks"), 1, glm::value_ptr(ks));
@@ -197,15 +215,16 @@ int main()
 
 	glEnable(GL_DEPTH_TEST);
 
-	// Matriz de projeção e view
-	glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
-	glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
-
-	glm::mat4 view = glm::lookAt(cameraPos, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-
 	while (!glfwWindowShouldClose(window))
 	{
+		// per-frame time logic
+		float currentFrame = glfwGetTime();
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
+
+		// input
+		processInput(window);
+
 		glfwPollEvents();
 
 		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -215,6 +234,17 @@ int main()
 		glPointSize(20);
 
 		float angle = (GLfloat)glfwGetTime();
+
+		// pass projection matrix to shader (note that in this case it could change every frame)
+		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
+		glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+
+		// camera/view transformation
+		glm::mat4 view = camera.GetViewMatrix();
+		glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+
+		// atualizar a posição da câmera para o Phong
+		glUniform3fv(glGetUniformLocation(shaderID, "viewPos"), 1, glm::value_ptr(camera.Position));
 
 		// Atualiza o estado das luzes pro Shader via uniform
 		int lightEnables[] = {enableKeyLight ? 1 : 0, enableFillLight ? 1 : 0, enableBackLight ? 1 : 0};
@@ -230,9 +260,6 @@ int main()
 
 		// Desenhar a Suzanne (apenas um objeto principal)
 		glm::mat4 model = glm::mat4(1);
-
-		// 1. Translação de input do usuário
-		model = glm::translate(model, glm::vec3(transX, transY, transZ));
 
 		// 2. Rotação do objeto
 		if (rotateX)
@@ -291,19 +318,51 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	if (key == GLFW_KEY_2 && action == GLFW_PRESS) enableFillLight = !enableFillLight;
 	if (key == GLFW_KEY_3 && action == GLFW_PRESS) enableBackLight = !enableBackLight;
 
-	// Comandos de translação (WASD para Y/X, IK para Z)
-	float moveSpeed = 0.05f;
-	if (key == GLFW_KEY_W && (action == GLFW_PRESS || action == GLFW_REPEAT)) transY += moveSpeed;
-	if (key == GLFW_KEY_S && (action == GLFW_PRESS || action == GLFW_REPEAT)) transY -= moveSpeed;
-	if (key == GLFW_KEY_A && (action == GLFW_PRESS || action == GLFW_REPEAT)) transX -= moveSpeed;
-	if (key == GLFW_KEY_D && (action == GLFW_PRESS || action == GLFW_REPEAT)) transX += moveSpeed;
-	if (key == GLFW_KEY_I && (action == GLFW_PRESS || action == GLFW_REPEAT)) transZ -= moveSpeed;
-	if (key == GLFW_KEY_K && (action == GLFW_PRESS || action == GLFW_REPEAT)) transZ += moveSpeed;
-
 	// Comandos de escala ([ e ])
 	float scaleSpeed = 0.05f;
 	if (key == GLFW_KEY_LEFT_BRACKET && (action == GLFW_PRESS || action == GLFW_REPEAT)) scaleObj -= scaleSpeed;
 	if (key == GLFW_KEY_RIGHT_BRACKET && (action == GLFW_PRESS || action == GLFW_REPEAT)) scaleObj += scaleSpeed;
+}
+
+// process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
+void processInput(GLFWwindow *window)
+{
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		camera.ProcessKeyboard(FORWARD, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		camera.ProcessKeyboard(BACKWARD, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		camera.ProcessKeyboard(LEFT, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		camera.ProcessKeyboard(RIGHT, deltaTime);
+}
+
+// glfw: whenever the mouse moves, this callback is called
+void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
+{
+	float xpos = static_cast<float>(xposIn);
+	float ypos = static_cast<float>(yposIn);
+
+	if (firstMouse)
+	{
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+
+	float xoffset = xpos - lastX;
+	float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+
+	lastX = xpos;
+	lastY = ypos;
+
+	camera.ProcessMouseMovement(xoffset, yoffset);
+}
+
+// glfw: whenever the mouse scroll wheel scrolls, this callback is called
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+	camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
 
 int setupShader()

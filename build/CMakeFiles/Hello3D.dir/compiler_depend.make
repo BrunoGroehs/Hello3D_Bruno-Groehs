@@ -451,6 +451,7 @@ CMakeFiles/Hello3D.dir/src/Hello3D.cpp.obj: C:/Users/Bruno\ Groehs/Desktop/FACUL
   _deps/glm-src/glm/vec2.hpp \
   _deps/glm-src/glm/vec3.hpp \
   _deps/glm-src/glm/vec4.hpp \
+  C:/Users/Bruno\ Groehs/Desktop/FACULDADE/Processamento\ Grafico/2026/Hello3D_Bruno-Groehs/include/Camera.h \
   C:/Users/Bruno\ Groehs/Desktop/FACULDADE/Processamento\ Grafico/2026/Hello3D_Bruno-Groehs/include/KHR/khrplatform.h \
   C:/Users/Bruno\ Groehs/Desktop/FACULDADE/Processamento\ Grafico/2026/Hello3D_Bruno-Groehs/include/glad/glad.h \
   C:/Users/Bruno\ Groehs/Desktop/FACULDADE/Processamento\ Grafico/2026/Hello3D_Bruno-Groehs/include/stb_image.h \
@@ -1348,6 +1349,8 @@ C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/hresetintrin.h:
 C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/ia32intrin.h:
 
 C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/immintrin.h:
+
+C:/Users/Bruno\ Groehs/Desktop/FACULDADE/Processamento\ Grafico/2026/Hello3D_Bruno-Groehs/include/Camera.h:
 
 C:/msys64/ucrt64/lib/gcc/x86_64-w64-mingw32/13.1.0/include/limits.h:
 
