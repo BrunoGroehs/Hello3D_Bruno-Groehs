@@ -121,6 +121,59 @@ float lastFrame = 0.0f;
 // Variáveis para escala
 float scaleObj = 1.0f;
 
+// Trajetoria do objeto
+vector<glm::vec3> trajectoryPoints;
+int currentSegment = 0;
+float segmentT = 0.0f;
+float trajectorySpeed = 0.5f;
+bool trajectoryActive = true;
+glm::vec3 objectPosition(0.0f);
+const string trajectoryFilePath = "Modelos3D/trajetoria.txt";
+
+bool loadTrajectory(const string &filePath, vector<glm::vec3> &points)
+{
+	ifstream arq(filePath.c_str());
+	if (!arq.is_open())
+	{
+		cerr << "Nao foi possivel abrir " << filePath << endl;
+		return false;
+	}
+	points.clear();
+	string line;
+	while (getline(arq, line))
+	{
+		size_t pos = line.find_first_not_of(" \t\r\n");
+		if (pos == string::npos) continue;
+		if (line[pos] == '#') continue;
+
+		istringstream ss(line);
+		glm::vec3 p;
+		if (ss >> p.x >> p.y >> p.z)
+			points.push_back(p);
+	}
+	arq.close();
+	cout << "Trajetoria carregada com " << points.size() << " pontos" << endl;
+	return true;
+}
+
+bool saveTrajectory(const string &filePath, const vector<glm::vec3> &points)
+{
+	ofstream arq(filePath.c_str());
+	if (!arq.is_open())
+	{
+		cerr << "Erro ao salvar trajetoria" << endl;
+		return false;
+	}
+	arq << "# Pontos da trajetoria\n";
+	for (size_t i = 0; i < points.size(); i++)
+	{
+		arq << points[i].x << " " << points[i].y << " " << points[i].z << "\n";
+	}
+	arq.close();
+	cout << "Trajetoria salva (" << points.size() << " pontos)" << endl;
+	return true;
+}
+
 int main()
 {
 	glfwInit();
@@ -215,6 +268,12 @@ int main()
 
 	glEnable(GL_DEPTH_TEST);
 
+	loadTrajectory(trajectoryFilePath, trajectoryPoints);
+	if (!trajectoryPoints.empty())
+		objectPosition = trajectoryPoints[0];
+
+	cout << "Trajetoria: T=on/off | P=add ponto | O=salvar | L=recarregar | C=limpar | ,/.=velocidade" << endl;
+
 	while (!glfwWindowShouldClose(window))
 	{
 		// per-frame time logic
@@ -258,8 +317,43 @@ int main()
 
 		glBindVertexArray(VAO);
 
+		// Atualiza posicao do objeto pela trajetoria (lerp entre pontos, ciclica)
+		if (trajectoryActive && trajectoryPoints.size() >= 2)
+		{
+			int n = (int)trajectoryPoints.size();
+			glm::vec3 a = trajectoryPoints[currentSegment];
+			glm::vec3 b = trajectoryPoints[(currentSegment + 1) % n];
+			float dist = glm::length(b - a);
+			if (dist < 0.0001f)
+			{
+				currentSegment = (currentSegment + 1) % n;
+				segmentT = 0.0f;
+			}
+			else
+			{
+				segmentT += (trajectorySpeed * deltaTime) / dist;
+				while (segmentT >= 1.0f)
+				{
+					segmentT -= 1.0f;
+					currentSegment = (currentSegment + 1) % n;
+					a = trajectoryPoints[currentSegment];
+					b = trajectoryPoints[(currentSegment + 1) % n];
+					dist = glm::length(b - a);
+					if (dist < 0.0001f) { segmentT = 0.0f; break; }
+				}
+				objectPosition = a + (b - a) * segmentT;
+			}
+		}
+		else if (!trajectoryPoints.empty())
+		{
+			objectPosition = trajectoryPoints[currentSegment % trajectoryPoints.size()];
+		}
+
 		// Desenhar a Suzanne (apenas um objeto principal)
 		glm::mat4 model = glm::mat4(1);
+
+		// 1. Translacao pela trajetoria
+		model = glm::translate(model, objectPosition);
 
 		// 2. Rotação do objeto
 		if (rotateX)
@@ -322,6 +416,50 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	float scaleSpeed = 0.05f;
 	if (key == GLFW_KEY_LEFT_BRACKET && (action == GLFW_PRESS || action == GLFW_REPEAT)) scaleObj -= scaleSpeed;
 	if (key == GLFW_KEY_RIGHT_BRACKET && (action == GLFW_PRESS || action == GLFW_REPEAT)) scaleObj += scaleSpeed;
+
+	// Trajetoria
+	if (key == GLFW_KEY_T && action == GLFW_PRESS)
+	{
+		trajectoryActive = !trajectoryActive;
+		cout << "Trajetoria " << (trajectoryActive ? "ON" : "OFF") << endl;
+	}
+	if (key == GLFW_KEY_P && action == GLFW_PRESS)
+	{
+		// adiciona um ponto na frente da camera (2 unidades pra frente)
+		glm::vec3 p = camera.Position + camera.Front * 2.0f;
+		trajectoryPoints.push_back(p);
+		cout << "Ponto adicionado: (" << p.x << ", " << p.y << ", " << p.z << ") total=" << trajectoryPoints.size() << endl;
+		if (trajectoryPoints.size() == 1) objectPosition = p;
+	}
+	if (key == GLFW_KEY_O && action == GLFW_PRESS)
+	{
+		saveTrajectory(trajectoryFilePath, trajectoryPoints);
+	}
+	if (key == GLFW_KEY_L && action == GLFW_PRESS)
+	{
+		loadTrajectory(trajectoryFilePath, trajectoryPoints);
+		currentSegment = 0;
+		segmentT = 0.0f;
+		if (!trajectoryPoints.empty()) objectPosition = trajectoryPoints[0];
+	}
+	if (key == GLFW_KEY_C && action == GLFW_PRESS)
+	{
+		trajectoryPoints.clear();
+		currentSegment = 0;
+		segmentT = 0.0f;
+		objectPosition = glm::vec3(0.0f);
+		cout << "Trajetoria limpa" << endl;
+	}
+	if (key == GLFW_KEY_COMMA && (action == GLFW_PRESS || action == GLFW_REPEAT))
+	{
+		trajectorySpeed = glm::max(0.05f, trajectorySpeed - 0.1f);
+		cout << "Velocidade trajetoria: " << trajectorySpeed << endl;
+	}
+	if (key == GLFW_KEY_PERIOD && (action == GLFW_PRESS || action == GLFW_REPEAT))
+	{
+		trajectorySpeed += 0.1f;
+		cout << "Velocidade trajetoria: " << trajectorySpeed << endl;
+	}
 }
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly

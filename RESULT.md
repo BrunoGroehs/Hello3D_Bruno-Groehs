@@ -22,8 +22,7 @@
 
 # Trajetorias dos objetos
 
-Cada objeto tem uma lista de pontos de controle e o objeto se desloca por esses pontos de forma ciclica (quando chega no ultimo, volta pro primeiro). A interpolacao entre os pontos é linear.
-
+Cada objeto tem uma lista de pontos de controle.
 Os pontos sao carregados de `Modelos3D/trajetoria.txt` no inicio, mas tambem da pra adicionar pontos novos em tempo de execucao usando o teclado.
 
 ## Comandos
