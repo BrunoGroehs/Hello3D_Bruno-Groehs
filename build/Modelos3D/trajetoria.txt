@@ -1,0 +1,11 @@
+# Pontos de controle da trajetoria do objeto.
+# Cada linha: x y z
+# A trajetoria e ciclica: ao chegar no ultimo ponto, retorna ao primeiro.
+-1.5 0.0 0.0
+-1.0 0.8 0.5
+ 0.0 1.2 0.0
+ 1.0 0.8 -0.5
+ 1.5 0.0 0.0
+ 1.0 -0.8 0.5
+ 0.0 -1.2 0.0
+-1.0 -0.8 -0.5
