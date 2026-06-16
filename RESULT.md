@@ -17,3 +17,20 @@
 
 # Adicionando Iluminação
 ![alt text](result3.png)
+
+# Movimento na camera esta no video na pasta. "Camera com movimento.mp4"
+
+# Trajetorias dos objetos
+
+Cada objeto tem uma lista de pontos de controle e o objeto se desloca por esses pontos de forma ciclica (quando chega no ultimo, volta pro primeiro). A interpolacao entre os pontos é linear.
+
+Os pontos sao carregados de `Modelos3D/trajetoria.txt` no inicio, mas tambem da pra adicionar pontos novos em tempo de execucao usando o teclado.
+
+## Comandos
+
+- **T**: liga/desliga a animacao
+- **P**: adiciona um ponto na posicao 2 unidades a frente da camera
+- **O**: salva os pontos no arquivo
+- **L**: recarrega os pontos do arquivo
+- **C**: limpa todos os pontos
+- **,** / **.** : diminui / aumenta a velocidade
