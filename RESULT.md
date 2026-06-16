@@ -20,7 +20,7 @@
 
 # Movimento na camera esta no video na pasta. "Camera com movimento.mp4"
 
-# Trajetorias dos objetos
+# Trajetorias dos objetos no video "Gravação de Tela 2026-06-16 163931.mp4"
 
 Cada objeto tem uma lista de pontos de controle.
 Os pontos sao carregados de `Modelos3D/trajetoria.txt` no inicio, mas tambem da pra adicionar pontos novos em tempo de execucao usando o teclado.
