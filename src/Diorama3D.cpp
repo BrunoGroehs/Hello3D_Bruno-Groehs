@@ -245,7 +245,7 @@ bool loadScene(const string &filePath, vector<SceneObject> &objects)
         o.scale = s;
         o.trajectoryT = 0.0f;
         o.trajectorySpeed = 0.3f;
-        o.trajectoryActive = true;
+        o.trajectoryActive = false;
 
         if (trajFile.empty() || trajFile == "-")
             o.trajectoryFile = "Modelos3D/traj_" + to_string(idx) + ".txt";
@@ -363,7 +363,7 @@ int main()
         {
             SceneObject &o = sceneObjects[i];
 
-            glm::vec3 trajPos(0.0f);
+            glm::vec3 trajPos = o.position;
             if (o.trajectoryPoints.size() >= 4)
             {
                 int n = (int)o.trajectoryPoints.size();
@@ -392,7 +392,7 @@ int main()
             }
 
             glm::mat4 model = glm::mat4(1);
-            model = glm::translate(model, o.position + trajPos);
+            model = glm::translate(model, trajPos);
 
             if (i == selectedObject)
             {
@@ -476,11 +476,9 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
         if (key == GLFW_KEY_P && action == GLFW_PRESS)
         {
-            glm::vec3 worldPoint = camera.Position + camera.Front * 2.5f;
-            glm::vec3 localPoint = worldPoint - o.position;
-            o.trajectoryPoints.push_back(localPoint);
+            o.trajectoryPoints.push_back(o.position);
             cout << "Ponto adicionado obj " << selectedObject
-                 << " local=(" << localPoint.x << "," << localPoint.y << "," << localPoint.z << ")"
+                 << " pos=(" << o.position.x << "," << o.position.y << "," << o.position.z << ")"
                  << " total=" << o.trajectoryPoints.size() << endl;
         }
         if (key == GLFW_KEY_O && action == GLFW_PRESS)
