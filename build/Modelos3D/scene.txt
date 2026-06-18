@@ -1,0 +1,4 @@
+# obj_path  tx ty tz  rx ry rz  scale  use_trajectory
+Modelos3D/Suzanne.obj   0.0 0.0 0.0   0 0 0   1.0   1
+Modelos3D/cube.obj      2.0 0.0 0.0   0 0 0   0.5   0
+Modelos3D/cube.obj     -2.0 0.0 0.0   0 0 0   0.5   0

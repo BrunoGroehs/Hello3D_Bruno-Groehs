@@ -1,8 +1,8 @@
-# Install script for directory: C:/Users/Bruno Groehs/Desktop/FACULDADE/Processamento Grafico/2026/Hello3D_Bruno-Groehs/build/_deps/glm-src
+# Install script for directory: C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glm-src
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/AtividadesCG")
+  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/Diorama3D")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -39,12 +39,12 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/Users/Bruno Groehs/Desktop/FACULDADE/Processamento Grafico/2026/Hello3D_Bruno-Groehs/build/_deps/glm-build/glm/cmake_install.cmake")
+  include("C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glm-build/glm/cmake_install.cmake")
 endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
 if(CMAKE_INSTALL_LOCAL_ONLY)
-  file(WRITE "C:/Users/Bruno Groehs/Desktop/FACULDADE/Processamento Grafico/2026/Hello3D_Bruno-Groehs/build/_deps/glm-build/install_local_manifest.txt"
+  file(WRITE "C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glm-build/install_local_manifest.txt"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
 endif()

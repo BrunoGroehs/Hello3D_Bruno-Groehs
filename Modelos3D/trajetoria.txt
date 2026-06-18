@@ -1,6 +1,5 @@
-# Pontos de controle da trajetoria do objeto.
-# Cada linha: x y z
-# A trajetoria e ciclica: ao chegar no ultimo ponto, retorna ao primeiro.
+# Pontos de controle (Bezier cubica em janelas de 4)
+# Cada linha: x y z. Sao usados em janelas deslizantes de 4 pontos.
 -1.5 0.0 0.0
 -1.0 0.8 0.5
  0.0 1.2 0.0

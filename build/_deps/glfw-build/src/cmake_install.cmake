@@ -1,8 +1,8 @@
-# Install script for directory: C:/Users/Bruno Groehs/Desktop/FACULDADE/Processamento Grafico/2026/Hello3D_Bruno-Groehs/build/_deps/glfw-src/src
+# Install script for directory: C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glfw-src/src
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/AtividadesCG")
+  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/Diorama3D")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -38,12 +38,12 @@ if(NOT DEFINED CMAKE_OBJDUMP)
 endif()
 
 if(CMAKE_INSTALL_COMPONENT STREQUAL "Unspecified" OR NOT CMAKE_INSTALL_COMPONENT)
-  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE STATIC_LIBRARY FILES "C:/Users/Bruno Groehs/Desktop/FACULDADE/Processamento Grafico/2026/Hello3D_Bruno-Groehs/build/_deps/glfw-build/src/libglfw3.a")
+  file(INSTALL DESTINATION "${CMAKE_INSTALL_PREFIX}/lib" TYPE STATIC_LIBRARY FILES "C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glfw-build/src/libglfw3.a")
 endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
 if(CMAKE_INSTALL_LOCAL_ONLY)
-  file(WRITE "C:/Users/Bruno Groehs/Desktop/FACULDADE/Processamento Grafico/2026/Hello3D_Bruno-Groehs/build/_deps/glfw-build/src/install_local_manifest.txt"
+  file(WRITE "C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glfw-build/src/install_local_manifest.txt"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
 endif()

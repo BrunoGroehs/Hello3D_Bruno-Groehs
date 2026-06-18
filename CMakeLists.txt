@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(AtividadesCG)
+project(Diorama3D)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -38,9 +38,8 @@ else()
     set(OPENGL_LIBS ${OPENGL_gl_LIBRARY})
 endif()
 
-add_executable(Hello3D src/Hello3D.cpp ${GLAD_C_FILE})
-target_include_directories(Hello3D PRIVATE ${CMAKE_SOURCE_DIR}/include/glad ${glm_SOURCE_DIR})
-target_link_libraries(Hello3D glfw ${OPENGL_LIBS})
+add_executable(Diorama3D src/Diorama3D.cpp ${GLAD_C_FILE})
+target_include_directories(Diorama3D PRIVATE ${CMAKE_SOURCE_DIR}/include/glad ${glm_SOURCE_DIR})
+target_link_libraries(Diorama3D glfw ${OPENGL_LIBS})
 
 file(COPY ${CMAKE_SOURCE_DIR}/Modelos3D DESTINATION ${CMAKE_BINARY_DIR})
-

@@ -1,0 +1,21 @@
+# ninja log v7
+2	451	8034116051193794	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-mkdir	f65630485b6f8364
+2	451	8034116051193794	C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-mkdir	f65630485b6f8364
+452	7384	8034116120694900	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-download	fc2cc998b256da78
+452	7384	8034116120694900	C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-download	fc2cc998b256da78
+7384	7745	8034116121531309	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-update	6c27dd4da0525b63
+7384	7745	8034116121531309	C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-update	6c27dd4da0525b63
+7745	8205	8034116128456243	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-patch	9897e0a1c5238e0c
+7745	8205	8034116128456243	C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-patch	9897e0a1c5238e0c
+8205	8669	8034116133228552	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-configure	aaa6d43e52eff074
+8205	8669	8034116133228552	C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-configure	aaa6d43e52eff074
+8669	9176	8034116138156699	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-build	8d4094ece49659ce
+8669	9176	8034116138156699	C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-build	8d4094ece49659ce
+9177	9694	8034116143352512	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-install	2062534795d77267
+9177	9694	8034116143352512	C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-install	2062534795d77267
+9694	10274	8034116149118592	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-test	54af92739da0581e
+9694	10274	8034116149118592	C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-test	54af92739da0581e
+10274	11021	8034116156655005	CMakeFiles/glfw-populate-complete	eab84bd7d71b6393
+10274	11021	8034116156655005	glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-done	eab84bd7d71b6393
+10274	11021	8034116156655005	C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glfw-subbuild/CMakeFiles/glfw-populate-complete	eab84bd7d71b6393
+10274	11021	8034116156655005	C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glfw-subbuild/glfw-populate-prefix/src/glfw-populate-stamp/glfw-populate-done	eab84bd7d71b6393

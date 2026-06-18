@@ -1,7 +1,7 @@
-prefix=C:/Program Files (x86)/AtividadesCG
+prefix=C:/Program Files (x86)/Diorama3D
 exec_prefix=${prefix}
-includedir=C:/Program Files (x86)/AtividadesCG/include
-libdir=C:/Program Files (x86)/AtividadesCG/lib
+includedir=C:/Program Files (x86)/Diorama3D/include
+libdir=C:/Program Files (x86)/Diorama3D/lib
 
 Name: GLFW
 Description: A multi-platform library for OpenGL, window and input
