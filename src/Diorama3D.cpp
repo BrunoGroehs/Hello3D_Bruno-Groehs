@@ -3,6 +3,7 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <filesystem>
 
 using namespace std;
 
@@ -51,8 +52,12 @@ bool loadScene(const string &filePath, vector<SceneObject> &objects);
 bool loadTrajectory(const string &filePath, vector<glm::vec3> &points);
 bool saveTrajectory(const string &filePath, const vector<glm::vec3> &points);
 glm::vec3 bezierPoint(const vector<glm::vec3> &pts, int base, float t);
+GLuint createGroundVAO(int &nVerts);
+GLuint createSphereVAO(int &nVerts);
+GLuint createLineVAO();
+void updateWindowTitle(GLFWwindow* window);
 
-const GLuint WIDTH = 1000, HEIGHT = 1000;
+const GLuint WIDTH = 1280, HEIGHT = 800;
 
 const GLchar* vertexShaderSource = "#version 330\n"
 "layout (location = 0) in vec3 position;\n"
@@ -92,35 +97,54 @@ const GLchar* fragmentShaderSource = "#version 330\n"
 "uniform vec3 ks;\n"
 "uniform float ns;\n"
 "uniform int isSelected;\n"
+"uniform int isGround;\n"
+"uniform int useOverride;\n"
+"uniform vec3 overrideColor;\n"
+"uniform int unlit;\n"
 "out vec4 color;\n"
 "void main()\n"
 "{\n"
+"    if (unlit == 1) {\n"
+"        color = vec4(overrideColor, 1.0);\n"
+"        return;\n"
+"    }\n"
 "    vec3 norm = normalize(Normal);\n"
 "    vec3 viewDir = normalize(viewPos - FragPos);\n"
-"    vec3 totalLighting = vec3(0.0);\n"
+"\n"
+"    vec3 objColor;\n"
+"    if (isGround == 1) {\n"
+"        float c = mod(floor(FragPos.x * 1.5) + floor(FragPos.z * 1.5), 2.0);\n"
+"        objColor = mix(vec3(0.32, 0.34, 0.40), vec3(0.55, 0.57, 0.62), c);\n"
+"    } else if (useOverride == 1) {\n"
+"        objColor = overrideColor;\n"
+"    } else if (useTexture == 1) {\n"
+"        objColor = texture(texBuffer, texCoordFrag).rgb;\n"
+"    } else {\n"
+"        objColor = max(kd, vec3(0.05));\n"
+"    }\n"
+"\n"
+"    vec3 ambient = max(ka, vec3(0.15)) * 0.35;\n"
+"\n"
+"    vec3 directLighting = vec3(0.0);\n"
 "    for(int i = 0; i < 3; i++) {\n"
 "        if (lightEnable[i] == 0) continue;\n"
 "        float distance = length(lightPos[i] - FragPos);\n"
-"        float attenuation = 1.0 / (1.0 + 0.09 * distance + 0.032 * (distance * distance));\n"
-"        vec3 ambient = 0.2 * ka * lightColor[i] * lightIntensity;\n"
+"        float attenuation = 1.0 / (1.0 + 0.045 * distance + 0.0075 * distance * distance);\n"
 "        vec3 lightDir = normalize(lightPos[i] - FragPos);\n"
 "        float diff = max(dot(norm, lightDir), 0.0);\n"
-"        vec3 diffuse = kd * diff * lightColor[i] * attenuation * lightIntensity;\n"
+"        vec3 diffuse = diff * lightColor[i] * attenuation * lightIntensity;\n"
 "        vec3 reflectDir = reflect(-lightDir, norm);\n"
-"        float spec = pow(max(dot(viewDir, reflectDir), 0.0), max(ns, 1.0));\n"
+"        float spec = pow(max(dot(viewDir, reflectDir), 0.0), max(ns, 8.0));\n"
 "        vec3 specular = ks * spec * lightColor[i] * attenuation * lightIntensity;\n"
-"        totalLighting += (ambient + diffuse + specular);\n"
+"        directLighting += diffuse + specular;\n"
 "    }\n"
-"    vec3 objColor;\n"
-"    if (useTexture == 1) {\n"
-"        objColor = texture(texBuffer, texCoordFrag).rgb;\n"
-"    } else {\n"
-"        objColor = finalColor.rgb;\n"
-"    }\n"
-"    vec3 result = totalLighting * objColor;\n"
+"\n"
+"    vec3 result = (ambient + directLighting) * objColor;\n"
 "    if (isSelected == 1) {\n"
-"        result = mix(result, vec3(1.0, 0.8, 0.2), 0.35);\n"
+"        result = mix(result, vec3(1.0, 0.55, 0.1), 0.45);\n"
 "    }\n"
+"    result = result / (result + vec3(1.0));\n"
+"    result = pow(result, vec3(1.0/2.2));\n"
 "    color = vec4(result, 1.0);\n"
 "}\n\0";
 
@@ -132,8 +156,11 @@ bool enableBackLight = true;
 float lightIntensity = 1.0f;
 
 bool showTexture = true;
+bool showTrajectoryGizmos = true;
+bool showLightMarkers = true;
+bool showGround = true;
 
-Camera camera(glm::vec3(0.0f, 0.0f, 5.0f));
+Camera camera(glm::vec3(4.0f, 3.5f, 6.0f));
 float lastX = WIDTH / 2.0f;
 float lastY = HEIGHT / 2.0f;
 bool firstMouse = true;
@@ -144,17 +171,20 @@ float lastFrame = 0.0f;
 vector<SceneObject> sceneObjects;
 int selectedObject = 0;
 
+GLuint groundVAO = 0, sphereVAO = 0, lineVAO = 0, lineVBO = 0;
+int groundVertCount = 0, sphereVertCount = 0;
+
+GLuint shaderID;
+GLint uModel, uView, uProj, uTex, uUseTex, uKa, uKd, uKs, uNs;
+GLint uSelected, uGround, uUseOverride, uOverrideColor, uUnlit;
+
 const string sceneFilePath = "Modelos3D/scene.txt";
 
 bool loadTrajectory(const string &filePath, vector<glm::vec3> &points)
 {
     ifstream arq(filePath.c_str());
-    if (!arq.is_open())
-    {
-        cerr << "Nao foi possivel abrir " << filePath << endl;
-        return false;
-    }
-    points.clear();
+    if (!arq.is_open()) return false;
+    vector<glm::vec3> tmp;
     string line;
     while (getline(arq, line))
     {
@@ -164,26 +194,43 @@ bool loadTrajectory(const string &filePath, vector<glm::vec3> &points)
         istringstream ss(line);
         glm::vec3 p;
         if (ss >> p.x >> p.y >> p.z)
-            points.push_back(p);
+            tmp.push_back(p);
     }
     arq.close();
-    cout << "Trajetoria carregada com " << points.size() << " pontos (" << filePath << ")" << endl;
+    if (tmp.empty())
+    {
+        cout << "Aviso: " << filePath << " esta vazio (mantendo pontos atuais)" << endl;
+        return false;
+    }
+    points = tmp;
+    cout << "Trajetoria carregada: " << filePath << " (" << points.size() << " pontos)" << endl;
     return true;
 }
 
 bool saveTrajectory(const string &filePath, const vector<glm::vec3> &points)
 {
+    if (points.empty())
+    {
+        cout << "Aviso: lista de pontos vazia, arquivo preservado" << endl;
+        return false;
+    }
+    try {
+        std::filesystem::path p(filePath);
+        if (p.has_parent_path())
+            std::filesystem::create_directories(p.parent_path());
+    } catch (...) {}
+
     ofstream arq(filePath.c_str());
     if (!arq.is_open())
     {
-        cerr << "Erro ao salvar trajetoria" << endl;
+        cerr << "Erro ao salvar trajetoria em: " << filePath << endl;
         return false;
     }
-    arq << "# Pontos da trajetoria\n";
+    arq << "# Pontos da trajetoria (Bezier cubica em janelas de 4)\n";
     for (size_t i = 0; i < points.size(); i++)
         arq << points[i].x << " " << points[i].y << " " << points[i].z << "\n";
     arq.close();
-    cout << "Trajetoria salva (" << points.size() << " pontos) em " << filePath << endl;
+    cout << "Trajetoria salva: " << filePath << " (" << points.size() << " pontos)" << endl;
     return true;
 }
 
@@ -208,6 +255,7 @@ bool loadScene(const string &filePath, vector<SceneObject> &objects)
     }
     objects.clear();
     string line;
+    int idx = 0;
     while (getline(arq, line))
     {
         size_t pos = line.find_first_not_of(" \t\r\n");
@@ -218,19 +266,23 @@ bool loadScene(const string &filePath, vector<SceneObject> &objects)
         string objPath;
         glm::vec3 t, r;
         float s;
-        string trajFile;
-        if (!(ss >> objPath >> t.x >> t.y >> t.z >> r.x >> r.y >> r.z >> s >> trajFile))
+        string trajFile = "-";
+        if (!(ss >> objPath >> t.x >> t.y >> t.z >> r.x >> r.y >> r.z >> s))
+        {
+            cerr << "Linha invalida no scene.txt: " << line << endl;
             continue;
+        }
+        ss >> trajFile;
 
         SceneObject o;
         int nVertices = 0;
         string mtlName;
         o.VAO = loadSimpleOBJ(objPath, nVertices, mtlName);
-        if ((int)o.VAO == -1) continue;
+        if ((int)o.VAO == -1) { idx++; continue; }
         o.nVertices = nVertices;
         o.texID = 0;
         o.useTexture = 0;
-        o.ka = glm::vec3(0.2f);
+        o.ka = glm::vec3(0.25f);
         o.kd = glm::vec3(0.8f);
         o.ks = glm::vec3(0.5f);
         o.ns = 32.0f;
@@ -240,6 +292,8 @@ bool loadScene(const string &filePath, vector<SceneObject> &objects)
         {
             string textureFileName;
             loadMTL(modelDir + mtlName, textureFileName, o.ka, o.kd, o.ks, o.ns);
+            if (glm::length(o.ka) < 0.05f) o.ka = glm::vec3(0.2f);
+            if (glm::length(o.kd) < 0.05f) o.kd = glm::vec3(0.7f);
             if (!textureFileName.empty())
             {
                 o.texID = loadTexture(modelDir + textureFileName);
@@ -251,32 +305,195 @@ bool loadScene(const string &filePath, vector<SceneObject> &objects)
         o.rotation = r;
         o.scale = s;
         o.trajectoryT = 0.0f;
-        o.trajectorySpeed = 0.2f;
+        o.trajectorySpeed = 0.25f;
         o.trajectoryActive = true;
 
-        if (trajFile != "-")
+        if (trajFile == "-" || trajFile.empty())
+            o.trajectoryFile = "Modelos3D/trajetoria_obj" + to_string(idx) + ".txt";
+        else
         {
             o.trajectoryFile = trajFile;
             loadTrajectory(trajFile, o.trajectoryPoints);
         }
 
+        cout << "[" << idx << "] " << objPath
+             << " pos=(" << t.x << "," << t.y << "," << t.z << ")"
+             << " escala=" << s
+             << " trajetoria=" << o.trajectoryFile
+             << " (" << o.trajectoryPoints.size() << " pts)" << endl;
+
         objects.push_back(o);
+        idx++;
     }
     arq.close();
-    cout << "Cena carregada com " << objects.size() << " objetos" << endl;
+    cout << "Cena carregada: " << objects.size() << " objetos" << endl;
     return true;
+}
+
+GLuint createGroundVAO(int &nVerts)
+{
+    float h = -1.0f;
+    float s = 8.0f;
+    float verts[] = {
+        -s, h, -s,  1,1,1,  0,0,  0,1,0,
+         s, h, -s,  1,1,1,  1,0,  0,1,0,
+         s, h,  s,  1,1,1,  1,1,  0,1,0,
+        -s, h, -s,  1,1,1,  0,0,  0,1,0,
+         s, h,  s,  1,1,1,  1,1,  0,1,0,
+        -s, h,  s,  1,1,1,  0,1,  0,1,0,
+    };
+    GLuint VBO, VAO;
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(verts), verts, GL_STATIC_DRAW);
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11*sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 11*sizeof(float), (void*)(3*sizeof(float)));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 11*sizeof(float), (void*)(6*sizeof(float)));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11*sizeof(float), (void*)(8*sizeof(float)));
+    glEnableVertexAttribArray(3);
+    glBindVertexArray(0);
+    nVerts = 6;
+    return VAO;
+}
+
+GLuint createSphereVAO(int &nVerts)
+{
+    vector<float> data;
+    int stacks = 12, slices = 16;
+    auto put = [&](float x, float y, float z) {
+        glm::vec3 n = glm::normalize(glm::vec3(x, y, z));
+        data.push_back(x); data.push_back(y); data.push_back(z);
+        data.push_back(1); data.push_back(1); data.push_back(1);
+        data.push_back(0); data.push_back(0);
+        data.push_back(n.x); data.push_back(n.y); data.push_back(n.z);
+    };
+    for (int i = 0; i < stacks; i++)
+    {
+        float t1 = (float)i / stacks * 3.14159265f;
+        float t2 = (float)(i+1) / stacks * 3.14159265f;
+        for (int j = 0; j < slices; j++)
+        {
+            float p1 = (float)j / slices * 2.0f * 3.14159265f;
+            float p2 = (float)(j+1) / slices * 2.0f * 3.14159265f;
+            float x1 = sin(t1)*cos(p1), y1 = cos(t1), z1 = sin(t1)*sin(p1);
+            float x2 = sin(t2)*cos(p1), y2 = cos(t2), z2 = sin(t2)*sin(p1);
+            float x3 = sin(t2)*cos(p2), y3 = cos(t2), z3 = sin(t2)*sin(p2);
+            float x4 = sin(t1)*cos(p2), y4 = cos(t1), z4 = sin(t1)*sin(p2);
+            put(x1,y1,z1); put(x2,y2,z2); put(x3,y3,z3);
+            put(x1,y1,z1); put(x3,y3,z3); put(x4,y4,z4);
+        }
+    }
+    GLuint VBO, VAO;
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, data.size()*sizeof(float), data.data(), GL_STATIC_DRAW);
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11*sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 11*sizeof(float), (void*)(3*sizeof(float)));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 11*sizeof(float), (void*)(6*sizeof(float)));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11*sizeof(float), (void*)(8*sizeof(float)));
+    glEnableVertexAttribArray(3);
+    glBindVertexArray(0);
+    nVerts = (int)(data.size() / 11);
+    return VAO;
+}
+
+GLuint createLineVAO()
+{
+    GLuint VAO;
+    glGenBuffers(1, &lineVBO);
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 11 * 2048, NULL, GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 11*sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 11*sizeof(float), (void*)(3*sizeof(float)));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 11*sizeof(float), (void*)(6*sizeof(float)));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 11*sizeof(float), (void*)(8*sizeof(float)));
+    glEnableVertexAttribArray(3);
+    glBindVertexArray(0);
+    return VAO;
+}
+
+void drawCurve(const vector<glm::vec3> &points, glm::vec3 color)
+{
+    if (points.size() < 4) return;
+    vector<float> data;
+    int n = (int)points.size();
+    int samples = 24;
+    for (int base = 0; base < n; base++)
+    {
+        for (int s = 0; s <= samples; s++)
+        {
+            float t = (float)s / samples;
+            glm::vec3 p = bezierPoint(points, base, t);
+            data.push_back(p.x); data.push_back(p.y); data.push_back(p.z);
+            data.push_back(color.r); data.push_back(color.g); data.push_back(color.b);
+            data.push_back(0); data.push_back(0);
+            data.push_back(0); data.push_back(1); data.push_back(0);
+        }
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, lineVBO);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, data.size()*sizeof(float), data.data());
+    glm::mat4 model(1);
+    glUniformMatrix4fv(uModel, 1, GL_FALSE, glm::value_ptr(model));
+    glUniform1i(uUnlit, 1);
+    glUniform3fv(uOverrideColor, 1, glm::value_ptr(color));
+    glBindVertexArray(lineVAO);
+    glLineWidth(2.5f);
+    glDrawArrays(GL_LINE_STRIP, 0, (int)(data.size() / 11));
+    glBindVertexArray(0);
+    glUniform1i(uUnlit, 0);
+}
+
+void drawMarker(GLuint vao, int verts, glm::vec3 pos, float size, glm::vec3 color)
+{
+    glm::mat4 model(1);
+    model = glm::translate(model, pos);
+    model = glm::scale(model, glm::vec3(size));
+    glUniformMatrix4fv(uModel, 1, GL_FALSE, glm::value_ptr(model));
+    glUniform1i(uUnlit, 1);
+    glUniform3fv(uOverrideColor, 1, glm::value_ptr(color));
+    glBindVertexArray(vao);
+    glDrawArrays(GL_TRIANGLES, 0, verts);
+    glBindVertexArray(0);
+    glUniform1i(uUnlit, 0);
+}
+
+void updateWindowTitle(GLFWwindow* window)
+{
+    if (sceneObjects.empty()) { glfwSetWindowTitle(window, "Diorama3D"); return; }
+    SceneObject &o = sceneObjects[selectedObject];
+    string title = "Diorama3D | obj=" + to_string(selectedObject)
+        + " | pts=" + to_string(o.trajectoryPoints.size())
+        + " | anim=" + (o.trajectoryActive ? "ON" : "OFF")
+        + " | vel=" + to_string(o.trajectorySpeed).substr(0,4)
+        + " | luzes=" + (enableKeyLight?"K":"-") + (enableFillLight?"F":"-") + (enableBackLight?"B":"-")
+        + " | int=" + to_string(lightIntensity).substr(0,3);
+    glfwSetWindowTitle(window, title.c_str());
 }
 
 int main()
 {
     glfwInit();
 
-    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Diorama3D -- Bruno Groehs", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Diorama3D", nullptr, nullptr);
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, key_callback);
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetScrollCallback(window, scroll_callback);
-
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -289,7 +506,7 @@ int main()
     glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
 
-    GLuint shaderID = setupShader();
+    shaderID = setupShader();
 
     if (!loadScene(sceneFilePath, sceneObjects))
     {
@@ -299,44 +516,54 @@ int main()
 
     glUseProgram(shaderID);
 
-    GLint modelLoc = glGetUniformLocation(shaderID, "model");
-    GLint viewLoc  = glGetUniformLocation(shaderID, "view");
-    GLint projLoc  = glGetUniformLocation(shaderID, "projection");
-    GLint texLoc   = glGetUniformLocation(shaderID, "texBuffer");
-    GLint useTexLoc = glGetUniformLocation(shaderID, "useTexture");
-    GLint kaLoc    = glGetUniformLocation(shaderID, "ka");
-    GLint kdLoc    = glGetUniformLocation(shaderID, "kd");
-    GLint ksLoc    = glGetUniformLocation(shaderID, "ks");
-    GLint nsLoc    = glGetUniformLocation(shaderID, "ns");
-    GLint selLoc   = glGetUniformLocation(shaderID, "isSelected");
+    uModel = glGetUniformLocation(shaderID, "model");
+    uView  = glGetUniformLocation(shaderID, "view");
+    uProj  = glGetUniformLocation(shaderID, "projection");
+    uTex   = glGetUniformLocation(shaderID, "texBuffer");
+    uUseTex = glGetUniformLocation(shaderID, "useTexture");
+    uKa    = glGetUniformLocation(shaderID, "ka");
+    uKd    = glGetUniformLocation(shaderID, "kd");
+    uKs    = glGetUniformLocation(shaderID, "ks");
+    uNs    = glGetUniformLocation(shaderID, "ns");
+    uSelected = glGetUniformLocation(shaderID, "isSelected");
+    uGround = glGetUniformLocation(shaderID, "isGround");
+    uUseOverride = glGetUniformLocation(shaderID, "useOverride");
+    uOverrideColor = glGetUniformLocation(shaderID, "overrideColor");
+    uUnlit = glGetUniformLocation(shaderID, "unlit");
 
     glm::vec3 lightPositions[] = {
-        glm::vec3(1.5f, 1.5f, 2.0f),
-        glm::vec3(-1.5f, 0.5f, 2.0f),
-        glm::vec3(0.0f, 2.0f, -2.5f)
+        glm::vec3(3.5f, 4.0f, 3.0f),
+        glm::vec3(-3.5f, 2.5f, 2.5f),
+        glm::vec3(0.0f, 3.5f, -4.0f)
     };
     glm::vec3 lightColors[] = {
-        glm::vec3(1.0f, 1.0f, 1.0f),
-        glm::vec3(0.4f, 0.4f, 0.4f),
-        glm::vec3(0.8f, 0.8f, 0.8f)
+        glm::vec3(1.0f, 0.95f, 0.85f),
+        glm::vec3(0.55f, 0.6f, 0.75f),
+        glm::vec3(0.5f, 0.7f, 1.0f)
     };
 
     glUniform3fv(glGetUniformLocation(shaderID, "lightPos"),   3, glm::value_ptr(lightPositions[0]));
     glUniform3fv(glGetUniformLocation(shaderID, "lightColor"), 3, glm::value_ptr(lightColors[0]));
-    glUniform1i(texLoc, 0);
+    glUniform1i(uTex, 0);
 
     glEnable(GL_DEPTH_TEST);
 
-    cout << "=== Diorama3D ===" << endl;
-    cout << "TAB: trocar objeto selecionado" << endl;
-    cout << "Setas: transladar XY  |  PgUp/PgDown: transladar Z" << endl;
-    cout << "X/Y/Z: rotacionar  |  [ ]: escala" << endl;
-    cout << "1/2/3: liga/desliga luz  |  +/-: intensidade da luz" << endl;
-    cout << "M: alternar textura/cor solida" << endl;
-    cout << "T: trajetoria on/off  |  ,/.: velocidade" << endl;
-    cout << "P: add ponto na trajetoria do objeto selecionado" << endl;
-    cout << "O: salvar trajetoria  |  L: recarregar trajetoria  |  C: limpar trajetoria" << endl;
-    cout << "WASD + mouse: camera  |  ESC: sair" << endl;
+    groundVAO = createGroundVAO(groundVertCount);
+    sphereVAO = createSphereVAO(sphereVertCount);
+    lineVAO = createLineVAO();
+
+    cout << "\n=== Diorama3D ===" << endl;
+    cout << "Camera:    WASD + mouse | scroll: zoom | R: reset" << endl;
+    cout << "Selecao:   TAB cicla objeto" << endl;
+    cout << "Mover:     setas (XY) | PgUp/PgDn (Z) | [ ]: escala" << endl;
+    cout << "Rotacao:   X / Y / Z (toggle eixo)" << endl;
+    cout << "Materiais: M alterna textura/cor" << endl;
+    cout << "Luzes:     1/2/3 toggle | + / -: intensidade" << endl;
+    cout << "Trajeto:   T anima | P add ponto | O salva | L carrega | C limpa | , .: velocidade" << endl;
+    cout << "Visual:    G chao | H gizmos da trajetoria | J marcadores das luzes" << endl;
+    cout << "ESC: sair\n" << endl;
+
+    updateWindowTitle(window);
 
     while (!glfwWindowShouldClose(window))
     {
@@ -347,22 +574,43 @@ int main()
         processInput(window);
         glfwPollEvents();
 
-        glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
+        glClearColor(0.16f, 0.18f, 0.25f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         float angle = (GLfloat)glfwGetTime();
 
         glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)WIDTH / (float)HEIGHT, 0.1f, 100.0f);
-        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(projection));
+        glUniformMatrix4fv(uProj, 1, GL_FALSE, glm::value_ptr(projection));
 
         glm::mat4 view = camera.GetViewMatrix();
-        glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(uView, 1, GL_FALSE, glm::value_ptr(view));
 
         glUniform3fv(glGetUniformLocation(shaderID, "viewPos"), 1, glm::value_ptr(camera.Position));
 
         int lightEnables[] = {enableKeyLight ? 1 : 0, enableFillLight ? 1 : 0, enableBackLight ? 1 : 0};
         glUniform1iv(glGetUniformLocation(shaderID, "lightEnable"), 3, lightEnables);
         glUniform1f(glGetUniformLocation(shaderID, "lightIntensity"), lightIntensity);
+
+        glUniform1i(uUnlit, 0);
+        glUniform1i(uUseOverride, 0);
+
+        if (showGround)
+        {
+            glm::mat4 model(1);
+            glUniformMatrix4fv(uModel, 1, GL_FALSE, glm::value_ptr(model));
+            glUniform1i(uGround, 1);
+            glUniform1i(uUseTex, 0);
+            glUniform1i(uSelected, 0);
+            glm::vec3 zero(0); float ns = 16.0f;
+            glUniform3fv(uKa, 1, glm::value_ptr(glm::vec3(0.3f)));
+            glUniform3fv(uKd, 1, glm::value_ptr(glm::vec3(0.5f)));
+            glUniform3fv(uKs, 1, glm::value_ptr(glm::vec3(0.1f)));
+            glUniform1f(uNs, ns);
+            glBindVertexArray(groundVAO);
+            glDrawArrays(GL_TRIANGLES, 0, groundVertCount);
+            glBindVertexArray(0);
+            glUniform1i(uGround, 0);
+        }
 
         for (int i = 0; i < (int)sceneObjects.size(); i++)
         {
@@ -384,12 +632,12 @@ int main()
             }
 
             int useTex = (showTexture && o.useTexture) ? 1 : 0;
-            glUniform1i(useTexLoc, useTex);
-            glUniform3fv(kaLoc, 1, glm::value_ptr(o.ka));
-            glUniform3fv(kdLoc, 1, glm::value_ptr(o.kd));
-            glUniform3fv(ksLoc, 1, glm::value_ptr(o.ks));
-            glUniform1f(nsLoc, o.ns);
-            glUniform1i(selLoc, (i == selectedObject) ? 1 : 0);
+            glUniform1i(uUseTex, useTex);
+            glUniform3fv(uKa, 1, glm::value_ptr(o.ka));
+            glUniform3fv(uKd, 1, glm::value_ptr(o.kd));
+            glUniform3fv(uKs, 1, glm::value_ptr(o.ks));
+            glUniform1f(uNs, o.ns);
+            glUniform1i(uSelected, (i == selectedObject) ? 1 : 0);
 
             if (useTex == 1)
             {
@@ -412,11 +660,37 @@ int main()
             model = glm::rotate(model, glm::radians(o.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
             model = glm::scale(model, glm::vec3(o.scale));
 
-            glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+            glUniformMatrix4fv(uModel, 1, GL_FALSE, glm::value_ptr(model));
 
             glBindVertexArray(o.VAO);
             glDrawArrays(GL_TRIANGLES, 0, o.nVertices);
             glBindVertexArray(0);
+        }
+
+        if (showTrajectoryGizmos)
+        {
+            for (int i = 0; i < (int)sceneObjects.size(); i++)
+            {
+                SceneObject &o = sceneObjects[i];
+                if (o.trajectoryPoints.empty()) continue;
+                bool sel = (i == selectedObject);
+                glm::vec3 lineColor = sel ? glm::vec3(1.0f, 0.6f, 0.1f) : glm::vec3(0.4f, 0.8f, 1.0f);
+                glm::vec3 ptColor   = sel ? glm::vec3(1.0f, 0.3f, 0.2f) : glm::vec3(0.7f, 0.7f, 0.85f);
+
+                drawCurve(o.trajectoryPoints, lineColor);
+
+                for (auto &p : o.trajectoryPoints)
+                    drawMarker(sphereVAO, sphereVertCount, o.position + p, sel ? 0.07f : 0.05f, ptColor);
+            }
+        }
+
+        if (showLightMarkers)
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                glm::vec3 c = lightEnables[i] ? lightColors[i] : glm::vec3(0.18f);
+                drawMarker(sphereVAO, sphereVertCount, lightPositions[i], 0.18f, c);
+            }
         }
 
         glfwSwapBuffers(window);
@@ -440,25 +714,70 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     {
         selectedObject = (selectedObject + 1) % (int)sceneObjects.size();
         cout << "Objeto selecionado: " << selectedObject << endl;
+        updateWindowTitle(window);
+    }
+
+    if (key == GLFW_KEY_R && action == GLFW_PRESS)
+    {
+        camera.Position = glm::vec3(4.0f, 3.5f, 6.0f);
+        camera.Yaw = -125.0f;
+        camera.Pitch = -20.0f;
+        cout << "Camera resetada" << endl;
     }
 
     if (key == GLFW_KEY_X && action == GLFW_PRESS) { rotateX = !rotateX; rotateY = false; rotateZ = false; }
     if (key == GLFW_KEY_Y && action == GLFW_PRESS) { rotateX = false; rotateY = !rotateY; rotateZ = false; }
     if (key == GLFW_KEY_Z && action == GLFW_PRESS) { rotateX = false; rotateY = false; rotateZ = !rotateZ; }
 
-    if (key == GLFW_KEY_1 && action == GLFW_PRESS) enableKeyLight  = !enableKeyLight;
-    if (key == GLFW_KEY_2 && action == GLFW_PRESS) enableFillLight = !enableFillLight;
-    if (key == GLFW_KEY_3 && action == GLFW_PRESS) enableBackLight = !enableBackLight;
+    if (key == GLFW_KEY_1 && action == GLFW_PRESS)
+    {
+        enableKeyLight = !enableKeyLight;
+        cout << "Key Light: " << (enableKeyLight ? "ON" : "OFF") << endl;
+        updateWindowTitle(window);
+    }
+    if (key == GLFW_KEY_2 && action == GLFW_PRESS)
+    {
+        enableFillLight = !enableFillLight;
+        cout << "Fill Light: " << (enableFillLight ? "ON" : "OFF") << endl;
+        updateWindowTitle(window);
+    }
+    if (key == GLFW_KEY_3 && action == GLFW_PRESS)
+    {
+        enableBackLight = !enableBackLight;
+        cout << "Back Light: " << (enableBackLight ? "ON" : "OFF") << endl;
+        updateWindowTitle(window);
+    }
 
-    if (key == GLFW_KEY_KP_ADD      && (action == GLFW_PRESS || action == GLFW_REPEAT)) lightIntensity = glm::min(3.0f, lightIntensity + 0.1f);
-    if (key == GLFW_KEY_KP_SUBTRACT && (action == GLFW_PRESS || action == GLFW_REPEAT)) lightIntensity = glm::max(0.0f, lightIntensity - 0.1f);
-    if (key == GLFW_KEY_EQUAL  && (action == GLFW_PRESS || action == GLFW_REPEAT)) lightIntensity = glm::min(3.0f, lightIntensity + 0.1f);
-    if (key == GLFW_KEY_MINUS  && (action == GLFW_PRESS || action == GLFW_REPEAT)) lightIntensity = glm::max(0.0f, lightIntensity - 0.1f);
+    if ((key == GLFW_KEY_KP_ADD || key == GLFW_KEY_EQUAL) && (action == GLFW_PRESS || action == GLFW_REPEAT))
+    {
+        lightIntensity = glm::min(3.0f, lightIntensity + 0.1f);
+        updateWindowTitle(window);
+    }
+    if ((key == GLFW_KEY_KP_SUBTRACT || key == GLFW_KEY_MINUS) && (action == GLFW_PRESS || action == GLFW_REPEAT))
+    {
+        lightIntensity = glm::max(0.0f, lightIntensity - 0.1f);
+        updateWindowTitle(window);
+    }
 
     if (key == GLFW_KEY_M && action == GLFW_PRESS)
     {
         showTexture = !showTexture;
         cout << "Textura: " << (showTexture ? "ON" : "OFF") << endl;
+    }
+    if (key == GLFW_KEY_G && action == GLFW_PRESS)
+    {
+        showGround = !showGround;
+        cout << "Chao: " << (showGround ? "ON" : "OFF") << endl;
+    }
+    if (key == GLFW_KEY_H && action == GLFW_PRESS)
+    {
+        showTrajectoryGizmos = !showTrajectoryGizmos;
+        cout << "Gizmos da trajetoria: " << (showTrajectoryGizmos ? "ON" : "OFF") << endl;
+    }
+    if (key == GLFW_KEY_J && action == GLFW_PRESS)
+    {
+        showLightMarkers = !showLightMarkers;
+        cout << "Marcadores das luzes: " << (showLightMarkers ? "ON" : "OFF") << endl;
     }
 
     if (selectedObject >= 0 && selectedObject < (int)sceneObjects.size())
@@ -472,43 +791,45 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         {
             o.trajectoryActive = !o.trajectoryActive;
             cout << "Trajetoria obj " << selectedObject << ": " << (o.trajectoryActive ? "ON" : "OFF") << endl;
+            updateWindowTitle(window);
         }
         if (key == GLFW_KEY_P && action == GLFW_PRESS)
         {
-            glm::vec3 p = camera.Position + camera.Front * 2.0f;
-            o.trajectoryPoints.push_back(p);
-            cout << "Ponto adicionado obj " << selectedObject << ": (" << p.x << ", " << p.y << ", " << p.z << ") total=" << o.trajectoryPoints.size() << endl;
+            glm::vec3 pWorld = camera.Position + camera.Front * 2.5f;
+            glm::vec3 pLocal = pWorld - o.position;
+            o.trajectoryPoints.push_back(pLocal);
+            cout << "Ponto adicionado obj " << selectedObject
+                 << " (" << pLocal.x << ", " << pLocal.y << ", " << pLocal.z << ")"
+                 << " total=" << o.trajectoryPoints.size() << endl;
+            updateWindowTitle(window);
         }
         if (key == GLFW_KEY_O && action == GLFW_PRESS)
         {
-            if (!o.trajectoryFile.empty())
-                saveTrajectory(o.trajectoryFile, o.trajectoryPoints);
-            else
-                cout << "Obj " << selectedObject << " nao tem arquivo de trajetoria definido no scene.txt" << endl;
+            saveTrajectory(o.trajectoryFile, o.trajectoryPoints);
+            o.trajectoryT = 0.0f;
         }
         if (key == GLFW_KEY_L && action == GLFW_PRESS)
         {
-            if (!o.trajectoryFile.empty())
-            {
-                loadTrajectory(o.trajectoryFile, o.trajectoryPoints);
-                o.trajectoryT = 0.0f;
-            }
+            loadTrajectory(o.trajectoryFile, o.trajectoryPoints);
+            o.trajectoryT = 0.0f;
+            updateWindowTitle(window);
         }
         if (key == GLFW_KEY_C && action == GLFW_PRESS)
         {
             o.trajectoryPoints.clear();
             o.trajectoryT = 0.0f;
-            cout << "Trajetoria obj " << selectedObject << " limpa" << endl;
+            cout << "Trajetoria obj " << selectedObject << " limpa (use O pra salvar/sobrescrever)" << endl;
+            updateWindowTitle(window);
         }
         if (key == GLFW_KEY_COMMA  && (action == GLFW_PRESS || action == GLFW_REPEAT))
         {
             o.trajectorySpeed = glm::max(0.05f, o.trajectorySpeed - 0.05f);
-            cout << "Velocidade obj " << selectedObject << ": " << o.trajectorySpeed << endl;
+            updateWindowTitle(window);
         }
         if (key == GLFW_KEY_PERIOD && (action == GLFW_PRESS || action == GLFW_REPEAT))
         {
             o.trajectorySpeed += 0.05f;
-            cout << "Velocidade obj " << selectedObject << ": " << o.trajectorySpeed << endl;
+            updateWindowTitle(window);
         }
     }
 }
@@ -570,11 +891,11 @@ int setupShader()
     glCompileShader(vertexShader);
 
     GLint success;
-    GLchar infoLog[512];
+    GLchar infoLog[1024];
     glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
     if (!success)
     {
-        glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+        glGetShaderInfoLog(vertexShader, 1024, NULL, infoLog);
         cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << endl;
     }
 
@@ -585,7 +906,7 @@ int setupShader()
     glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
     if (!success)
     {
-        glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+        glGetShaderInfoLog(fragmentShader, 1024, NULL, infoLog);
         cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << endl;
     }
 
@@ -597,7 +918,7 @@ int setupShader()
     glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
     if (!success)
     {
-        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        glGetProgramInfoLog(shaderProgram, 1024, NULL, infoLog);
         cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << endl;
     }
 
@@ -629,10 +950,7 @@ int loadSimpleOBJ(string filePath, int &nVertices, string &mtlFileName)
         string word;
         ssline >> word;
 
-        if (word == "mtllib")
-        {
-            ssline >> mtlFileName;
-        }
+        if (word == "mtllib") ssline >> mtlFileName;
         else if (word == "v")
         {
             glm::vec3 vertice;
