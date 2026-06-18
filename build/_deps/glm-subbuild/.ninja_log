@@ -1,0 +1,21 @@
+# ninja log v7
+3	443	8035130873345882	glm-populate-prefix/src/glm-populate-stamp/glm-populate-mkdir	83fc0eab74b69d93
+3	443	8035130873345882	C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp/glm-populate-mkdir	83fc0eab74b69d93
+444	13351	8035131002143687	glm-populate-prefix/src/glm-populate-stamp/glm-populate-download	2b24026f2e5e890c
+444	13351	8035131002143687	C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp/glm-populate-download	2b24026f2e5e890c
+13351	20622	8035131003301611	glm-populate-prefix/src/glm-populate-stamp/glm-populate-update	42b1466500608fb3
+13351	20622	8035131003301611	C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp/glm-populate-update	42b1466500608fb3
+20622	21053	8035131079430533	glm-populate-prefix/src/glm-populate-stamp/glm-populate-patch	bdb75774f63d2ed4
+20622	21053	8035131079430533	C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp/glm-populate-patch	bdb75774f63d2ed4
+21053	21479	8035131083918590	glm-populate-prefix/src/glm-populate-stamp/glm-populate-configure	f45305c78e26ecd2
+21053	21479	8035131083918590	C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp/glm-populate-configure	f45305c78e26ecd2
+21479	21907	8035131088146490	glm-populate-prefix/src/glm-populate-stamp/glm-populate-build	80435e670265b6a8
+21479	21907	8035131088146490	C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp/glm-populate-build	80435e670265b6a8
+21908	22340	8035131092530709	glm-populate-prefix/src/glm-populate-stamp/glm-populate-install	569d84c3766c009f
+21908	22340	8035131092530709	C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp/glm-populate-install	569d84c3766c009f
+22340	22783	8035131096851339	glm-populate-prefix/src/glm-populate-stamp/glm-populate-test	7185c071da975832
+22340	22783	8035131096851339	C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp/glm-populate-test	7185c071da975832
+22784	23409	8035131103221417	CMakeFiles/glm-populate-complete	77f98a9338a2fb90
+22784	23409	8035131103221417	glm-populate-prefix/src/glm-populate-stamp/glm-populate-done	77f98a9338a2fb90
+22784	23409	8035131103221417	C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glm-subbuild/CMakeFiles/glm-populate-complete	77f98a9338a2fb90
+22784	23409	8035131103221417	C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glm-subbuild/glm-populate-prefix/src/glm-populate-stamp/glm-populate-done	77f98a9338a2fb90

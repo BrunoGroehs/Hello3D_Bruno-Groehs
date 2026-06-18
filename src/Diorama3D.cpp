@@ -30,7 +30,12 @@ struct SceneObject {
     glm::vec3 position;
     glm::vec3 rotation;
     float scale;
-    bool useTrajectory;
+
+    string trajectoryFile;
+    vector<glm::vec3> trajectoryPoints;
+    float trajectoryT;
+    float trajectorySpeed;
+    bool trajectoryActive;
 };
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -43,6 +48,8 @@ int loadSimpleOBJ(string filePath, int &nVertices, string &mtlFileName);
 string loadMTL(string filePath, string &textureFileName, glm::vec3 &ka, glm::vec3 &kd, glm::vec3 &ks, float &ns);
 GLuint loadTexture(string filePath);
 bool loadScene(const string &filePath, vector<SceneObject> &objects);
+bool loadTrajectory(const string &filePath, vector<glm::vec3> &points);
+bool saveTrajectory(const string &filePath, const vector<glm::vec3> &points);
 glm::vec3 bezierPoint(const vector<glm::vec3> &pts, int base, float t);
 
 const GLuint WIDTH = 1000, HEIGHT = 1000;
@@ -137,11 +144,6 @@ float lastFrame = 0.0f;
 vector<SceneObject> sceneObjects;
 int selectedObject = 0;
 
-vector<glm::vec3> trajectoryPoints;
-float trajectoryT = 0.0f;
-float trajectorySpeed = 0.2f;
-bool trajectoryActive = true;
-const string trajectoryFilePath = "Modelos3D/trajetoria.txt";
 const string sceneFilePath = "Modelos3D/scene.txt";
 
 bool loadTrajectory(const string &filePath, vector<glm::vec3> &points)
@@ -159,14 +161,13 @@ bool loadTrajectory(const string &filePath, vector<glm::vec3> &points)
         size_t pos = line.find_first_not_of(" \t\r\n");
         if (pos == string::npos) continue;
         if (line[pos] == '#') continue;
-
         istringstream ss(line);
         glm::vec3 p;
         if (ss >> p.x >> p.y >> p.z)
             points.push_back(p);
     }
     arq.close();
-    cout << "Trajetoria carregada com " << points.size() << " pontos" << endl;
+    cout << "Trajetoria carregada com " << points.size() << " pontos (" << filePath << ")" << endl;
     return true;
 }
 
@@ -178,13 +179,11 @@ bool saveTrajectory(const string &filePath, const vector<glm::vec3> &points)
         cerr << "Erro ao salvar trajetoria" << endl;
         return false;
     }
-    arq << "# Pontos da trajetoria (Bezier cubica em janelas de 4 pontos)\n";
+    arq << "# Pontos da trajetoria\n";
     for (size_t i = 0; i < points.size(); i++)
-    {
         arq << points[i].x << " " << points[i].y << " " << points[i].z << "\n";
-    }
     arq.close();
-    cout << "Trajetoria salva (" << points.size() << " pontos)" << endl;
+    cout << "Trajetoria salva (" << points.size() << " pontos) em " << filePath << endl;
     return true;
 }
 
@@ -219,8 +218,8 @@ bool loadScene(const string &filePath, vector<SceneObject> &objects)
         string objPath;
         glm::vec3 t, r;
         float s;
-        int useTraj;
-        if (!(ss >> objPath >> t.x >> t.y >> t.z >> r.x >> r.y >> r.z >> s >> useTraj))
+        string trajFile;
+        if (!(ss >> objPath >> t.x >> t.y >> t.z >> r.x >> r.y >> r.z >> s >> trajFile))
             continue;
 
         SceneObject o;
@@ -251,7 +250,16 @@ bool loadScene(const string &filePath, vector<SceneObject> &objects)
         o.position = t;
         o.rotation = r;
         o.scale = s;
-        o.useTrajectory = (useTraj != 0);
+        o.trajectoryT = 0.0f;
+        o.trajectorySpeed = 0.2f;
+        o.trajectoryActive = true;
+
+        if (trajFile != "-")
+        {
+            o.trajectoryFile = trajFile;
+            loadTrajectory(trajFile, o.trajectoryPoints);
+        }
+
         objects.push_back(o);
     }
     arq.close();
@@ -292,15 +300,15 @@ int main()
     glUseProgram(shaderID);
 
     GLint modelLoc = glGetUniformLocation(shaderID, "model");
-    GLint viewLoc = glGetUniformLocation(shaderID, "view");
-    GLint projLoc = glGetUniformLocation(shaderID, "projection");
-    GLint texLoc = glGetUniformLocation(shaderID, "texBuffer");
+    GLint viewLoc  = glGetUniformLocation(shaderID, "view");
+    GLint projLoc  = glGetUniformLocation(shaderID, "projection");
+    GLint texLoc   = glGetUniformLocation(shaderID, "texBuffer");
     GLint useTexLoc = glGetUniformLocation(shaderID, "useTexture");
-    GLint kaLoc = glGetUniformLocation(shaderID, "ka");
-    GLint kdLoc = glGetUniformLocation(shaderID, "kd");
-    GLint ksLoc = glGetUniformLocation(shaderID, "ks");
-    GLint nsLoc = glGetUniformLocation(shaderID, "ns");
-    GLint selLoc = glGetUniformLocation(shaderID, "isSelected");
+    GLint kaLoc    = glGetUniformLocation(shaderID, "ka");
+    GLint kdLoc    = glGetUniformLocation(shaderID, "kd");
+    GLint ksLoc    = glGetUniformLocation(shaderID, "ks");
+    GLint nsLoc    = glGetUniformLocation(shaderID, "ns");
+    GLint selLoc   = glGetUniformLocation(shaderID, "isSelected");
 
     glm::vec3 lightPositions[] = {
         glm::vec3(1.5f, 1.5f, 2.0f),
@@ -313,13 +321,11 @@ int main()
         glm::vec3(0.8f, 0.8f, 0.8f)
     };
 
-    glUniform3fv(glGetUniformLocation(shaderID, "lightPos"), 3, glm::value_ptr(lightPositions[0]));
+    glUniform3fv(glGetUniformLocation(shaderID, "lightPos"),   3, glm::value_ptr(lightPositions[0]));
     glUniform3fv(glGetUniformLocation(shaderID, "lightColor"), 3, glm::value_ptr(lightColors[0]));
     glUniform1i(texLoc, 0);
 
     glEnable(GL_DEPTH_TEST);
-
-    loadTrajectory(trajectoryFilePath, trajectoryPoints);
 
     cout << "=== Diorama3D ===" << endl;
     cout << "TAB: trocar objeto selecionado" << endl;
@@ -327,7 +333,9 @@ int main()
     cout << "X/Y/Z: rotacionar  |  [ ]: escala" << endl;
     cout << "1/2/3: liga/desliga luz  |  +/-: intensidade da luz" << endl;
     cout << "M: alternar textura/cor solida" << endl;
-    cout << "T: anima Bezier on/off  |  ,/.: velocidade  |  L: recarrega trajetoria" << endl;
+    cout << "T: trajetoria on/off  |  ,/.: velocidade" << endl;
+    cout << "P: add ponto na trajetoria do objeto selecionado" << endl;
+    cout << "O: salvar trajetoria  |  L: recarregar trajetoria  |  C: limpar trajetoria" << endl;
     cout << "WASD + mouse: camera  |  ESC: sair" << endl;
 
     while (!glfwWindowShouldClose(window))
@@ -356,24 +364,24 @@ int main()
         glUniform1iv(glGetUniformLocation(shaderID, "lightEnable"), 3, lightEnables);
         glUniform1f(glGetUniformLocation(shaderID, "lightIntensity"), lightIntensity);
 
-        glm::vec3 trajPos(0.0f);
-        if (trajectoryPoints.size() >= 4)
-        {
-            int n = (int)trajectoryPoints.size();
-            if (trajectoryActive)
-            {
-                trajectoryT += trajectorySpeed * deltaTime;
-                while (trajectoryT >= (float)n)
-                    trajectoryT -= (float)n;
-            }
-            int base = (int)trajectoryT;
-            float t = trajectoryT - (float)base;
-            trajPos = bezierPoint(trajectoryPoints, base, t);
-        }
-
         for (int i = 0; i < (int)sceneObjects.size(); i++)
         {
             SceneObject &o = sceneObjects[i];
+
+            glm::vec3 trajPos(0.0f);
+            if (o.trajectoryPoints.size() >= 4)
+            {
+                int n = (int)o.trajectoryPoints.size();
+                if (o.trajectoryActive)
+                {
+                    o.trajectoryT += o.trajectorySpeed * deltaTime;
+                    while (o.trajectoryT >= (float)n)
+                        o.trajectoryT -= (float)n;
+                }
+                int base = (int)o.trajectoryT;
+                float t = o.trajectoryT - (float)base;
+                trajPos = bezierPoint(o.trajectoryPoints, base, t);
+            }
 
             int useTex = (showTexture && o.useTexture) ? 1 : 0;
             glUniform1i(useTexLoc, useTex);
@@ -390,12 +398,7 @@ int main()
             }
 
             glm::mat4 model = glm::mat4(1);
-
-            glm::vec3 pos = o.position;
-            if (o.useTrajectory && trajectoryPoints.size() >= 4)
-                pos = pos + trajPos;
-
-            model = glm::translate(model, pos);
+            model = glm::translate(model, o.position + trajPos);
 
             if (i == selectedObject)
             {
@@ -407,7 +410,6 @@ int main()
             model = glm::rotate(model, glm::radians(o.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
             model = glm::rotate(model, glm::radians(o.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
             model = glm::rotate(model, glm::radians(o.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-
             model = glm::scale(model, glm::vec3(o.scale));
 
             glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -444,18 +446,14 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     if (key == GLFW_KEY_Y && action == GLFW_PRESS) { rotateX = false; rotateY = !rotateY; rotateZ = false; }
     if (key == GLFW_KEY_Z && action == GLFW_PRESS) { rotateX = false; rotateY = false; rotateZ = !rotateZ; }
 
-    if (key == GLFW_KEY_1 && action == GLFW_PRESS) enableKeyLight = !enableKeyLight;
+    if (key == GLFW_KEY_1 && action == GLFW_PRESS) enableKeyLight  = !enableKeyLight;
     if (key == GLFW_KEY_2 && action == GLFW_PRESS) enableFillLight = !enableFillLight;
     if (key == GLFW_KEY_3 && action == GLFW_PRESS) enableBackLight = !enableBackLight;
 
-    if (key == GLFW_KEY_KP_ADD && (action == GLFW_PRESS || action == GLFW_REPEAT))
-        lightIntensity = glm::min(3.0f, lightIntensity + 0.1f);
-    if (key == GLFW_KEY_KP_SUBTRACT && (action == GLFW_PRESS || action == GLFW_REPEAT))
-        lightIntensity = glm::max(0.0f, lightIntensity - 0.1f);
-    if (key == GLFW_KEY_EQUAL && (action == GLFW_PRESS || action == GLFW_REPEAT))
-        lightIntensity = glm::min(3.0f, lightIntensity + 0.1f);
-    if (key == GLFW_KEY_MINUS && (action == GLFW_PRESS || action == GLFW_REPEAT))
-        lightIntensity = glm::max(0.0f, lightIntensity - 0.1f);
+    if (key == GLFW_KEY_KP_ADD      && (action == GLFW_PRESS || action == GLFW_REPEAT)) lightIntensity = glm::min(3.0f, lightIntensity + 0.1f);
+    if (key == GLFW_KEY_KP_SUBTRACT && (action == GLFW_PRESS || action == GLFW_REPEAT)) lightIntensity = glm::max(0.0f, lightIntensity - 0.1f);
+    if (key == GLFW_KEY_EQUAL  && (action == GLFW_PRESS || action == GLFW_REPEAT)) lightIntensity = glm::min(3.0f, lightIntensity + 0.1f);
+    if (key == GLFW_KEY_MINUS  && (action == GLFW_PRESS || action == GLFW_REPEAT)) lightIntensity = glm::max(0.0f, lightIntensity - 0.1f);
 
     if (key == GLFW_KEY_M && action == GLFW_PRESS)
     {
@@ -466,29 +464,52 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     if (selectedObject >= 0 && selectedObject < (int)sceneObjects.size())
     {
         SceneObject &o = sceneObjects[selectedObject];
+
         if (key == GLFW_KEY_LEFT_BRACKET  && (action == GLFW_PRESS || action == GLFW_REPEAT)) o.scale = glm::max(0.05f, o.scale - 0.05f);
         if (key == GLFW_KEY_RIGHT_BRACKET && (action == GLFW_PRESS || action == GLFW_REPEAT)) o.scale += 0.05f;
-    }
 
-    if (key == GLFW_KEY_T && action == GLFW_PRESS)
-    {
-        trajectoryActive = !trajectoryActive;
-        cout << "Trajetoria " << (trajectoryActive ? "ON" : "OFF") << endl;
-    }
-    if (key == GLFW_KEY_L && action == GLFW_PRESS)
-    {
-        loadTrajectory(trajectoryFilePath, trajectoryPoints);
-        trajectoryT = 0.0f;
-    }
-    if (key == GLFW_KEY_COMMA && (action == GLFW_PRESS || action == GLFW_REPEAT))
-    {
-        trajectorySpeed = glm::max(0.05f, trajectorySpeed - 0.05f);
-        cout << "Velocidade: " << trajectorySpeed << endl;
-    }
-    if (key == GLFW_KEY_PERIOD && (action == GLFW_PRESS || action == GLFW_REPEAT))
-    {
-        trajectorySpeed += 0.05f;
-        cout << "Velocidade: " << trajectorySpeed << endl;
+        if (key == GLFW_KEY_T && action == GLFW_PRESS)
+        {
+            o.trajectoryActive = !o.trajectoryActive;
+            cout << "Trajetoria obj " << selectedObject << ": " << (o.trajectoryActive ? "ON" : "OFF") << endl;
+        }
+        if (key == GLFW_KEY_P && action == GLFW_PRESS)
+        {
+            glm::vec3 p = camera.Position + camera.Front * 2.0f;
+            o.trajectoryPoints.push_back(p);
+            cout << "Ponto adicionado obj " << selectedObject << ": (" << p.x << ", " << p.y << ", " << p.z << ") total=" << o.trajectoryPoints.size() << endl;
+        }
+        if (key == GLFW_KEY_O && action == GLFW_PRESS)
+        {
+            if (!o.trajectoryFile.empty())
+                saveTrajectory(o.trajectoryFile, o.trajectoryPoints);
+            else
+                cout << "Obj " << selectedObject << " nao tem arquivo de trajetoria definido no scene.txt" << endl;
+        }
+        if (key == GLFW_KEY_L && action == GLFW_PRESS)
+        {
+            if (!o.trajectoryFile.empty())
+            {
+                loadTrajectory(o.trajectoryFile, o.trajectoryPoints);
+                o.trajectoryT = 0.0f;
+            }
+        }
+        if (key == GLFW_KEY_C && action == GLFW_PRESS)
+        {
+            o.trajectoryPoints.clear();
+            o.trajectoryT = 0.0f;
+            cout << "Trajetoria obj " << selectedObject << " limpa" << endl;
+        }
+        if (key == GLFW_KEY_COMMA  && (action == GLFW_PRESS || action == GLFW_REPEAT))
+        {
+            o.trajectorySpeed = glm::max(0.05f, o.trajectorySpeed - 0.05f);
+            cout << "Velocidade obj " << selectedObject << ": " << o.trajectorySpeed << endl;
+        }
+        if (key == GLFW_KEY_PERIOD && (action == GLFW_PRESS || action == GLFW_REPEAT))
+        {
+            o.trajectorySpeed += 0.05f;
+            cout << "Velocidade obj " << selectedObject << ": " << o.trajectorySpeed << endl;
+        }
     }
 }
 
@@ -640,7 +661,7 @@ int loadSimpleOBJ(string filePath, int &nVertices, string &mtlFileName)
 
                 if (getline(ss, index, '/')) vi = !index.empty() ? stoi(index) - 1 : 0;
                 if (getline(ss, index, '/')) ti = !index.empty() ? stoi(index) - 1 : -1;
-                if (getline(ss, index)) ni = !index.empty() ? stoi(index) - 1 : -1;
+                if (getline(ss, index))      ni = !index.empty() ? stoi(index) - 1 : -1;
 
                 vBuffer.push_back(vertices[vi].x);
                 vBuffer.push_back(vertices[vi].y);
@@ -703,7 +724,6 @@ int loadSimpleOBJ(string filePath, int &nVertices, string &mtlFileName)
     glBindVertexArray(0);
 
     nVertices = vBuffer.size() / 11;
-
     return VAO;
 }
 
