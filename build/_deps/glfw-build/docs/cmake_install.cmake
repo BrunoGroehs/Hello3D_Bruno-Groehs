@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glfw-src/docs
+# Install script for directory: C:/Users/Bruno Groehs/Desktop/FACULDADE/Processamento Grafico/2026/Hello3D_Bruno-Groehs/build/_deps/glfw-src/docs
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -40,6 +40,6 @@ endif()
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
 if(CMAKE_INSTALL_LOCAL_ONLY)
-  file(WRITE "C:/Users/I753372/Desktop/facul/Computação Gráfica/Hello3D_Bruno-Groehs/build/_deps/glfw-build/docs/install_local_manifest.txt"
+  file(WRITE "C:/Users/Bruno Groehs/Desktop/FACULDADE/Processamento Grafico/2026/Hello3D_Bruno-Groehs/build/_deps/glfw-build/docs/install_local_manifest.txt"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
 endif()
