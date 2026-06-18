@@ -465,15 +465,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
     if (selectedObject >= 0 && selectedObject < (int)sceneObjects.size())
     {
-        float step = 0.1f;
         SceneObject &o = sceneObjects[selectedObject];
-        if (key == GLFW_KEY_RIGHT && (action == GLFW_PRESS || action == GLFW_REPEAT)) o.position.x += step;
-        if (key == GLFW_KEY_LEFT  && (action == GLFW_PRESS || action == GLFW_REPEAT)) o.position.x -= step;
-        if (key == GLFW_KEY_UP    && (action == GLFW_PRESS || action == GLFW_REPEAT)) o.position.y += step;
-        if (key == GLFW_KEY_DOWN  && (action == GLFW_PRESS || action == GLFW_REPEAT)) o.position.y -= step;
-        if (key == GLFW_KEY_PAGE_UP   && (action == GLFW_PRESS || action == GLFW_REPEAT)) o.position.z -= step;
-        if (key == GLFW_KEY_PAGE_DOWN && (action == GLFW_PRESS || action == GLFW_REPEAT)) o.position.z += step;
-
         if (key == GLFW_KEY_LEFT_BRACKET  && (action == GLFW_PRESS || action == GLFW_REPEAT)) o.scale = glm::max(0.05f, o.scale - 0.05f);
         if (key == GLFW_KEY_RIGHT_BRACKET && (action == GLFW_PRESS || action == GLFW_REPEAT)) o.scale += 0.05f;
     }
@@ -510,6 +502,18 @@ void processInput(GLFWwindow *window)
         camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
+
+    if (selectedObject >= 0 && selectedObject < (int)sceneObjects.size())
+    {
+        float step = 2.0f * deltaTime;
+        SceneObject &o = sceneObjects[selectedObject];
+        if (glfwGetKey(window, GLFW_KEY_RIGHT)     == GLFW_PRESS) o.position.x += step;
+        if (glfwGetKey(window, GLFW_KEY_LEFT)      == GLFW_PRESS) o.position.x -= step;
+        if (glfwGetKey(window, GLFW_KEY_UP)        == GLFW_PRESS) o.position.y += step;
+        if (glfwGetKey(window, GLFW_KEY_DOWN)      == GLFW_PRESS) o.position.y -= step;
+        if (glfwGetKey(window, GLFW_KEY_PAGE_UP)   == GLFW_PRESS) o.position.z -= step;
+        if (glfwGetKey(window, GLFW_KEY_PAGE_DOWN) == GLFW_PRESS) o.position.z += step;
+    }
 }
 
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
