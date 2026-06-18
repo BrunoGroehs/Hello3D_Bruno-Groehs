@@ -1,3 +1,8 @@
-Modelos3D/Suzanne.obj   -2.0 0.0 0.0   0 0 0   0.8
-Modelos3D/Suzanne.obj    0.0 0.0 0.0   0 0 0   0.8
-Modelos3D/Suzanne.obj    2.0 0.0 0.0   0 0 0   0.8
+# obj_path  tx ty tz  rx ry rz  scale  trajetoria_arquivo (ou - pra gerar default)
+Modelos3D/Suzanne.obj    0.0  0.5  0.0    0  0  0   1.0   Modelos3D/traj_suzanne.txt
+Modelos3D/cube.obj       1.5  0.8  0.0    0 30  0   0.30  Modelos3D/traj_satelite.txt
+Modelos3D/cube.obj       0.0  2.2  0.0    0 45 15   0.35  Modelos3D/traj_aereo.txt
+Modelos3D/cube.obj      -2.2 -0.55 -2.2   0 25  0   0.45  -
+Modelos3D/cube.obj       2.2 -0.55  2.2   0 -25 0   0.45  -
+Modelos3D/cube.obj      -2.5 -0.4   1.8   0  0 30   0.30  -
+Modelos3D/cube.obj       2.5 -0.4  -1.8   0  0 -30  0.30  -
